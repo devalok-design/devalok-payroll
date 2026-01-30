@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { PayrollStatus } from '@prisma/client'
 
 // GET /api/payroll/[id] - Get a single payroll run with payments
 export async function GET(
@@ -111,7 +112,7 @@ export async function PATCH(
     }
 
     const updateData: {
-      status?: string
+      status?: PayrollStatus
       notes?: string
       processedAt?: Date
       processedById?: string
@@ -119,7 +120,7 @@ export async function PATCH(
     } = {}
 
     if (status) {
-      updateData.status = status
+      updateData.status = status as PayrollStatus
       if (status === 'PROCESSED' && oldRun.status !== 'PROCESSED') {
         updateData.processedAt = new Date()
         updateData.processedById = session.user.id
@@ -137,18 +138,19 @@ export async function PATCH(
       const run = await tx.payrollRun.update({
         where: { id },
         data: updateData,
+      })
+
+      // Get payments for this payroll run
+      const payments = await tx.payment.findMany({
+        where: { payrollRunId: id },
         include: {
-          payments: {
-            include: {
-              lokwasi: {
-                select: {
-                  id: true,
-                  name: true,
-                  employeeCode: true,
-                  bankName: true,
-                  isAxisBank: true,
-                },
-              },
+          lokwasi: {
+            select: {
+              id: true,
+              name: true,
+              employeeCode: true,
+              bankName: true,
+              isAxisBank: true,
             },
           },
         },
@@ -180,7 +182,7 @@ export async function PATCH(
         const year = runDate.getFullYear()
         const month = runDate.getMonth() + 1
 
-        for (const payment of run.payments) {
+        for (const payment of payments) {
           // Find or create TDS monthly record
           const existingTds = await tx.tdsMonthly.findUnique({
             where: {
@@ -233,17 +235,17 @@ export async function PATCH(
         },
       })
 
-      return run
+      return { run, payments }
     })
 
     // Transform Decimal to number for JSON
     const transformedRun = {
-      ...payrollRun,
-      totalGross: Number(payrollRun.totalGross),
-      totalTds: Number(payrollRun.totalTds),
-      totalNet: Number(payrollRun.totalNet),
-      totalDebtPayout: Number(payrollRun.totalDebtPayout),
-      totalLeaveCashout: Number(payrollRun.totalLeaveCashout),
+      ...payrollRun.run,
+      totalGross: Number(payrollRun.run.totalGross),
+      totalTds: Number(payrollRun.run.totalTds),
+      totalNet: Number(payrollRun.run.totalNet),
+      totalDebtPayout: Number(payrollRun.run.totalDebtPayout),
+      totalLeaveCashout: Number(payrollRun.run.totalLeaveCashout),
       payments: payrollRun.payments.map((p) => ({
         ...p,
         grossAmount: Number(p.grossAmount),
