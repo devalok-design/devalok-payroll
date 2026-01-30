@@ -1,26 +1,209 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Devalok Brand Colors - Padmavarna (Lotus Color) */
+  --devalok-50: #FCF7F7;
+  --devalok-100: #F7E9E9;
+  --devalok-200: #EFD5D9;
+  --devalok-300: #DD9EB8;
+  --devalok-400: #E26598;
+  --devalok-500: #F0477B;
+  --devalok-600: #D33163;
+  --devalok-700: #B02651;
+  --devalok-800: #932044;
+  --devalok-900: #712846;
+  --devalok-950: #3F181E;
+
+  /* Neutrals */
+  --neutral-0: #FFFFFF;
+  --neutral-50: #F8F7F7;
+  --neutral-100: #F2F1F1;
+  --neutral-200: #E6E4E5;
+  --neutral-300: #D3CED0;
+  --neutral-400: #B7AFB2;
+  --neutral-500: #8C8084;
+  --neutral-600: #6B6164;
+  --neutral-700: #564E50;
+  --neutral-800: #403A3C;
+  --neutral-900: #282425;
+  --neutral-950: #0D0C0C;
+
+  /* Semantic Colors */
+  --success: #238823;
+  --success-light: #dcfce7;
+  --warning: #E29300;
+  --warning-light: #fef3c7;
+  --error: #D2222D;
+  --error-light: #fee2e2;
+  --info: #43B2ED;
+
+  /* shadcn Theme Variables - Light Mode */
+  --radius: 0.25rem;
+  --background: var(--neutral-0);
+  --foreground: var(--neutral-900);
+  --card: var(--neutral-0);
+  --card-foreground: var(--neutral-900);
+  --popover: var(--neutral-0);
+  --popover-foreground: var(--neutral-900);
+  --primary: var(--devalok-600);
+  --primary-foreground: var(--neutral-0);
+  --secondary: var(--neutral-100);
+  --secondary-foreground: var(--neutral-900);
+  --muted: var(--neutral-100);
+  --muted-foreground: var(--neutral-500);
+  --accent: var(--devalok-50);
+  --accent-foreground: var(--devalok-900);
+  --destructive: var(--error);
+  --destructive-foreground: var(--neutral-0);
+  --border: var(--neutral-200);
+  --input: var(--neutral-200);
+  --ring: var(--devalok-600);
+  --chart-1: var(--devalok-600);
+  --chart-2: var(--devalok-400);
+  --chart-3: var(--neutral-600);
+  --chart-4: var(--success);
+  --chart-5: var(--warning);
+
+  /* Sidebar */
+  --sidebar: var(--neutral-900);
+  --sidebar-foreground: var(--neutral-100);
+  --sidebar-primary: var(--devalok-600);
+  --sidebar-primary-foreground: var(--neutral-0);
+  --sidebar-accent: var(--neutral-800);
+  --sidebar-accent-foreground: var(--neutral-100);
+  --sidebar-border: var(--neutral-700);
+  --sidebar-ring: var(--devalok-600);
+}
+
+.dark {
+  --background: var(--neutral-950);
+  --foreground: var(--neutral-50);
+  --card: var(--neutral-900);
+  --card-foreground: var(--neutral-50);
+  --popover: var(--neutral-900);
+  --popover-foreground: var(--neutral-50);
+  --primary: var(--devalok-500);
+  --primary-foreground: var(--neutral-0);
+  --secondary: var(--neutral-800);
+  --secondary-foreground: var(--neutral-50);
+  --muted: var(--neutral-800);
+  --muted-foreground: var(--neutral-400);
+  --accent: var(--neutral-800);
+  --accent-foreground: var(--neutral-50);
+  --destructive: #ef4444;
+  --destructive-foreground: var(--neutral-0);
+  --border: var(--neutral-700);
+  --input: var(--neutral-700);
+  --ring: var(--devalok-500);
 }
 
 @theme inline {
+  /* Core Theme Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Charts */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Devalok Brand Scale */
+  --color-devalok-50: var(--devalok-50);
+  --color-devalok-100: var(--devalok-100);
+  --color-devalok-200: var(--devalok-200);
+  --color-devalok-300: var(--devalok-300);
+  --color-devalok-400: var(--devalok-400);
+  --color-devalok-500: var(--devalok-500);
+  --color-devalok-600: var(--devalok-600);
+  --color-devalok-700: var(--devalok-700);
+  --color-devalok-800: var(--devalok-800);
+  --color-devalok-900: var(--devalok-900);
+  --color-devalok-950: var(--devalok-950);
+
+  /* Semantic Colors */
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
+  --color-warning: var(--warning);
+  --color-warning-light: var(--warning-light);
+  --color-error: var(--error);
+  --color-error-light: var(--error-light);
+  --color-info: var(--info);
+
+  /* Radius - Small rounded corners */
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Font */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--neutral-400);
+  border-radius: var(--radius);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-500);
+}
+
+/* Selection color */
+::selection {
+  background: var(--devalok-200);
+  color: var(--neutral-900);
 }
