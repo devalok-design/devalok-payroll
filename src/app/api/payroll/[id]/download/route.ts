@@ -110,8 +110,8 @@ export async function GET(
       filename = `devalok-neft-${runDate.toISOString().split('T')[0]}.xlsx`
     }
 
-    // Return the Excel file
-    return new NextResponse(buffer, {
+    // Return the Excel file - Convert Buffer to Uint8Array for proper BodyInit compatibility
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="${filename}"`,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { TdsFilingStatus } from '@prisma/client'
 
 // GET /api/tds/[year]/[month] - Get TDS data for a specific month
 export async function GET(
@@ -102,14 +103,14 @@ export async function PATCH(
     const { status, challanNumber, paidDate, filedDate } = body
 
     const updateData: {
-      filingStatus?: string
+      filingStatus?: TdsFilingStatus
       challanNumber?: string
       paidDate?: Date
       filedDate?: Date
     } = {}
 
     if (status) {
-      updateData.filingStatus = status
+      updateData.filingStatus = status as TdsFilingStatus
       if (status === 'FILED' && !filedDate) {
         updateData.filedDate = new Date()
       }
