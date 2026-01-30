@@ -77,7 +77,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
 })
 
-// Extend types
+// Extend types for NextAuth v5
 declare module 'next-auth' {
   interface User {
     role?: string
@@ -92,7 +92,7 @@ declare module 'next-auth' {
   }
 }
 
-declare module 'next-auth/jwt' {
+declare module '@auth/core/jwt' {
   interface JWT {
     id?: string
     role?: string
