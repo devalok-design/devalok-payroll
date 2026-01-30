@@ -79,11 +79,13 @@ export async function GET(
     const buffer = await generateTDSReportExcel(report)
     const filename = `devalok-tds-${yearNum}-${monthNum.toString().padStart(2, '0')}.xlsx`
 
-    // Use Blob for proper BodyInit compatibility with TypeScript 5.9
-    const blob = new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    })
-    return new NextResponse(blob, {
+    // Convert Node.js Buffer to ArrayBuffer for proper BodyInit compatibility
+    const arrayBuffer = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    )
+
+    return new Response(arrayBuffer, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="${filename}"`,
