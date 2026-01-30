@@ -79,13 +79,10 @@ export async function GET(
     const buffer = await generateTDSReportExcel(report)
     const filename = `devalok-tds-${yearNum}-${monthNum.toString().padStart(2, '0')}.xlsx`
 
-    // Convert Node.js Buffer to ArrayBuffer for proper BodyInit compatibility
-    const arrayBuffer = buffer.buffer.slice(
-      buffer.byteOffset,
-      buffer.byteOffset + buffer.byteLength
-    )
+    // Convert Node.js Buffer to Uint8Array for proper BodyInit compatibility
+    const uint8Array = new Uint8Array(buffer)
 
-    return new Response(arrayBuffer, {
+    return new Response(uint8Array, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="${filename}"`,
