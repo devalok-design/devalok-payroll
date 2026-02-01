@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -51,13 +50,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-          <Image
-            src="https://raw.githubusercontent.com/devalok-design/devalok-brand-assets/main/Logo/PNG/COLOR/COLOR%20-%20Monogram%20%2B%20Wordmark-01.png"
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://cdn.jsdelivr.net/gh/devalok-design/devalok-brand-assets@main/Logo/PNG/COLOR/COLOR%20-%20Monogram%20%2B%20Wordmark-01.png"
             alt="Devalok"
             width={180}
             height={54}
             className="mx-auto"
-            priority
           />
           <div className="space-y-1">
             <div className="w-px h-6 bg-border mx-auto" />
