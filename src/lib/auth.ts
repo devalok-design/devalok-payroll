@@ -13,56 +13,40 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        console.log('[Auth] Authorize called with email:', credentials?.email)
-
         if (!credentials?.email || !credentials?.password) {
-          console.log('[Auth] Missing credentials')
           return null
         }
 
-        try {
-          const user = await prisma.user.findUnique({
-            where: {
-              email: credentials.email as string,
-            },
-          })
+        const user = await prisma.user.findUnique({
+          where: {
+            email: credentials.email as string,
+          },
+        })
 
-          console.log('[Auth] User found:', user ? user.email : 'NOT FOUND')
-
-          if (!user) {
-            console.log('[Auth] User not found in database')
-            return null
-          }
-
-          const isPasswordValid = await compare(
-            credentials.password as string,
-            user.passwordHash
-          )
-
-          console.log('[Auth] Password valid:', isPasswordValid)
-
-          if (!isPasswordValid) {
-            console.log('[Auth] Invalid password')
-            return null
-          }
-
-          // Update last login
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { lastLoginAt: new Date() },
-          })
-
-          console.log('[Auth] Login successful for:', user.email)
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-          }
-        } catch (error) {
-          console.error('[Auth] Error during authorization:', error)
+        if (!user) {
           return null
+        }
+
+        const isPasswordValid = await compare(
+          credentials.password as string,
+          user.passwordHash
+        )
+
+        if (!isPasswordValid) {
+          return null
+        }
+
+        // Update last login
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        })
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
         }
       },
     }),
