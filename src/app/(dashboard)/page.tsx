@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { GeneratePayrollsButton } from '@/components/dashboard/GeneratePayrollsButton'
 
 async function getDashboardData() {
   const schedule = await prisma.payrollSchedule.findFirst({
@@ -242,6 +243,8 @@ export default async function DashboardPage() {
                 <p className="text-sm text-muted-foreground">Add a new team member</p>
               </div>
             </Link>
+
+            <GeneratePayrollsButton />
           </CardContent>
         </Card>
 

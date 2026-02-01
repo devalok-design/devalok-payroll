@@ -1,0 +1,106 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { RefreshCw, Loader2, CheckCircle } from 'lucide-react'
+
+interface GenerateResult {
+  message: string
+  generated: number
+  payrollRuns?: Array<{
+    id: string
+    runDate: string
+    employeeCount: number
+    totalNet: number
+  }>
+  error?: string
+}
+
+export function GeneratePayrollsButton() {
+  const router = useRouter()
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [result, setResult] = useState<GenerateResult | null>(null)
+
+  const handleGenerate = async () => {
+    setIsGenerating(true)
+    setResult(null)
+
+    try {
+      const response = await fetch('/api/payroll/generate', {
+        method: 'POST',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setResult({ message: data.error || 'Failed to generate', generated: 0, error: data.error })
+      } else {
+        setResult(data)
+        // Refresh the page to show new payrolls
+        if (data.generated > 0) {
+          router.refresh()
+        }
+      }
+    } catch (error) {
+      setResult({
+        message: 'Failed to generate payrolls',
+        generated: 0,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <button
+        onClick={handleGenerate}
+        disabled={isGenerating}
+        className="flex items-center gap-3 p-3 rounded-sm border hover:bg-accent transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <div className="w-10 h-10 bg-success flex items-center justify-center rounded-sm">
+          {isGenerating ? (
+            <Loader2 className="w-5 h-5 text-white animate-spin" />
+          ) : (
+            <RefreshCw className="w-5 h-5 text-white" />
+          )}
+        </div>
+        <div className="text-left">
+          <p className="font-medium">
+            {isGenerating ? 'Generating...' : 'Generate Pending Payrolls'}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Auto-create any overdue payroll runs
+          </p>
+        </div>
+      </button>
+
+      {result && (
+        <div
+          className={`p-3 rounded-sm text-sm ${
+            result.error
+              ? 'bg-destructive/10 text-destructive'
+              : result.generated > 0
+              ? 'bg-success/10 text-success'
+              : 'bg-muted text-muted-foreground'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {result.generated > 0 && <CheckCircle className="w-4 h-4" />}
+            <span>{result.message}</span>
+          </div>
+          {result.payrollRuns && result.payrollRuns.length > 0 && (
+            <ul className="mt-2 space-y-1 text-xs">
+              {result.payrollRuns.map((run) => (
+                <li key={run.id}>
+                  {new Date(run.runDate).toLocaleDateString('en-IN')} - {run.employeeCount} employees
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
