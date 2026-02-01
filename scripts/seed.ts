@@ -317,7 +317,9 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: 'mudit@devalok.in' },
-    update: {},
+    update: {
+      name: 'Mudit Lal', // Ensure name is always correct
+    },
     create: {
       email: 'mudit@devalok.in',
       name: 'Mudit Lal',
