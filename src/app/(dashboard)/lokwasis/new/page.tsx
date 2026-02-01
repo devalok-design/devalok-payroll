@@ -5,11 +5,32 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { ArrowLeft, Save } from 'lucide-react'
+import { INDIAN_BANKS, isAxisBankIFSC, getBankFromIFSC } from '@/lib/constants/banks'
 
 export default function NewLokwasiPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [ifscCode, setIfscCode] = useState('')
+  const [bankName, setBankName] = useState('')
+  const [isAxisBank, setIsAxisBank] = useState(false)
+
+  const handleIfscChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase()
+    setIfscCode(value)
+
+    // Auto-detect Axis Bank
+    const isAxis = isAxisBankIFSC(value)
+    setIsAxisBank(isAxis)
+
+    // Auto-suggest bank name from IFSC
+    if (value.length >= 4) {
+      const detectedBank = getBankFromIFSC(value)
+      if (detectedBank) {
+        setBankName(detectedBank)
+      }
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -22,10 +43,10 @@ export default function NewLokwasiPage() {
       pan: (formData.get('pan') as string).toUpperCase(),
       aadhaar: (formData.get('aadhaar') as string).replace(/\s/g, ''),
       bankAccount: formData.get('bankAccount') as string,
-      ifscCode: (formData.get('ifscCode') as string).toUpperCase(),
-      bankName: formData.get('bankName') as string,
+      ifscCode: ifscCode,
+      bankName: bankName,
       beneficiaryNickname: formData.get('beneficiaryNickname') as string,
-      isAxisBank: formData.get('isAxisBank') === 'true',
+      isAxisBank: isAxisBank,
       tdsRate: parseFloat(formData.get('tdsRate') as string) || 10,
       grossSalary: parseFloat(formData.get('grossSalary') as string),
       natureOfWork: formData.get('natureOfWork') as string || 'Professional Services',
@@ -175,15 +196,46 @@ export default function NewLokwasiPage() {
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  Bank Name *
+                  IFSC Code *
                 </label>
                 <input
-                  name="bankName"
+                  name="ifscCode"
                   type="text"
                   required
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                  placeholder="e.g., State Bank of India"
+                  maxLength={11}
+                  value={ifscCode}
+                  onChange={handleIfscChange}
+                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)] uppercase"
+                  placeholder="e.g., SBIN0009019"
                 />
+                {errors.ifscCode && (
+                  <p className="mt-1 text-sm text-[var(--error)]">{errors.ifscCode}</p>
+                )}
+                {isAxisBank && (
+                  <p className="mt-1 text-xs text-[var(--success)]">
+                    Axis Bank detected - will use within-bank transfer
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  Bank Name *
+                </label>
+                <select
+                  name="bankName"
+                  required
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                >
+                  <option value="">Select a bank</option>
+                  {INDIAN_BANKS.map((bank) => (
+                    <option key={bank} value={bank}>
+                      {bank}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -197,23 +249,6 @@ export default function NewLokwasiPage() {
                   className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
                   placeholder="e.g., 30209006571"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  IFSC Code *
-                </label>
-                <input
-                  name="ifscCode"
-                  type="text"
-                  required
-                  maxLength={11}
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)] uppercase"
-                  placeholder="e.g., SBIN0009019"
-                />
-                {errors.ifscCode && (
-                  <p className="mt-1 text-sm text-[var(--error)]">{errors.ifscCode}</p>
-                )}
               </div>
 
               <div>
@@ -237,7 +272,8 @@ export default function NewLokwasiPage() {
                   <input
                     name="isAxisBank"
                     type="checkbox"
-                    value="true"
+                    checked={isAxisBank}
+                    onChange={(e) => setIsAxisBank(e.target.checked)}
                     className="w-5 h-5 border border-[var(--border)] accent-[var(--primary)]"
                   />
                   <span className="text-sm text-[var(--foreground)]">
@@ -245,7 +281,7 @@ export default function NewLokwasiPage() {
                   </span>
                 </label>
                 <p className="mt-1 ml-8 text-xs text-[var(--muted-foreground)]">
-                  Check if the bank account is with Axis Bank (for within-bank transfers)
+                  Auto-detected from IFSC code (UTIB prefix). Override if needed.
                 </p>
               </div>
             </div>

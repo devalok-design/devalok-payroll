@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { formatCurrency, maskAadhaar, maskBankAccount, formatDate } from '@/lib/utils'
+import { INDIAN_BANKS, isAxisBankIFSC, getBankFromIFSC } from '@/lib/constants/banks'
 import {
   ArrowLeft,
   Edit2,
@@ -112,10 +113,39 @@ export default function LokwasiDetailPage({
   const [isTerminating, setIsTerminating] = useState(false)
   const [showTerminateDialog, setShowTerminateDialog] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [editIfscCode, setEditIfscCode] = useState('')
+  const [editBankName, setEditBankName] = useState('')
+  const [editIsAxisBank, setEditIsAxisBank] = useState(false)
+
+  const handleIfscChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase()
+    setEditIfscCode(value)
+
+    // Auto-detect Axis Bank
+    const isAxis = isAxisBankIFSC(value)
+    setEditIsAxisBank(isAxis)
+
+    // Auto-suggest bank name from IFSC
+    if (value.length >= 4) {
+      const detectedBank = getBankFromIFSC(value)
+      if (detectedBank) {
+        setEditBankName(detectedBank)
+      }
+    }
+  }
 
   useEffect(() => {
     fetchLokwasi()
   }, [id])
+
+  // Initialize edit state when lokwasi data is loaded
+  useEffect(() => {
+    if (lokwasi) {
+      setEditIfscCode(lokwasi.ifscCode)
+      setEditBankName(lokwasi.bankName)
+      setEditIsAxisBank(lokwasi.isAxisBank)
+    }
+  }, [lokwasi])
 
   const fetchLokwasi = async () => {
     try {
@@ -150,10 +180,10 @@ export default function LokwasiDetailPage({
       pan: (formData.get('pan') as string).toUpperCase(),
       aadhaar: (formData.get('aadhaar') as string).replace(/\s/g, ''),
       bankAccount: formData.get('bankAccount') as string,
-      ifscCode: (formData.get('ifscCode') as string).toUpperCase(),
-      bankName: formData.get('bankName') as string,
+      ifscCode: editIfscCode,
+      bankName: editBankName,
       beneficiaryNickname: formData.get('beneficiaryNickname') as string,
-      isAxisBank: formData.get('isAxisBank') === 'true',
+      isAxisBank: editIsAxisBank,
       tdsRate: parseFloat(formData.get('tdsRate') as string) || 10,
       grossSalary: parseFloat(formData.get('grossSalary') as string),
       natureOfWork: formData.get('natureOfWork') as string,
@@ -451,15 +481,44 @@ export default function LokwasiDetailPage({
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                    Bank Name
+                    IFSC Code
                   </label>
                   <input
-                    name="bankName"
+                    name="ifscCode"
                     type="text"
-                    defaultValue={lokwasi.bankName}
+                    value={editIfscCode}
+                    onChange={handleIfscChange}
+                    required
+                    maxLength={11}
+                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)] uppercase"
+                  />
+                  {errors.ifscCode && (
+                    <p className="mt-1 text-sm text-[var(--error)]">{errors.ifscCode}</p>
+                  )}
+                  {editIsAxisBank && (
+                    <p className="mt-1 text-xs text-[var(--success)]">
+                      Axis Bank detected - will use within-bank transfer
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                    Bank Name
+                  </label>
+                  <select
+                    name="bankName"
+                    value={editBankName}
+                    onChange={(e) => setEditBankName(e.target.value)}
                     required
                     className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                  />
+                  >
+                    <option value="">Select a bank</option>
+                    {INDIAN_BANKS.map((bank) => (
+                      <option key={bank} value={bank}>
+                        {bank}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
@@ -472,22 +531,6 @@ export default function LokwasiDetailPage({
                     required
                     className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
                   />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                    IFSC Code
-                  </label>
-                  <input
-                    name="ifscCode"
-                    type="text"
-                    defaultValue={lokwasi.ifscCode}
-                    required
-                    maxLength={11}
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)] uppercase"
-                  />
-                  {errors.ifscCode && (
-                    <p className="mt-1 text-sm text-[var(--error)]">{errors.ifscCode}</p>
-                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
@@ -506,14 +549,17 @@ export default function LokwasiDetailPage({
                     <input
                       name="isAxisBank"
                       type="checkbox"
-                      value="true"
-                      defaultChecked={lokwasi.isAxisBank}
+                      checked={editIsAxisBank}
+                      onChange={(e) => setEditIsAxisBank(e.target.checked)}
                       className="w-5 h-5 border border-[var(--border)] accent-[var(--primary)]"
                     />
                     <span className="text-sm text-[var(--foreground)]">
                       This is an Axis Bank account
                     </span>
                   </label>
+                  <p className="mt-1 ml-8 text-xs text-[var(--muted-foreground)]">
+                    Auto-detected from IFSC code (UTIB prefix). Override if needed.
+                  </p>
                 </div>
               </div>
             </div>
