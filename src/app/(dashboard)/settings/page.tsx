@@ -132,13 +132,30 @@ export default function SettingsPage() {
               </h2>
             </div>
             <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-3">
                   <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
                     Company Name
                   </p>
                   <p className="text-[var(--foreground)] font-medium">
-                    Devalok Design Private Limited
+                    Devalok Design and Strategy Studio Private Limited
+                  </p>
+                </div>
+                <div className="md:col-span-3">
+                  <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+                    Registered Address
+                  </p>
+                  <p className="text-[var(--foreground)]">
+                    FF-91, Khajana Complex, Sector - K, Aashiyana<br />
+                    Lucknow 226012, Uttar Pradesh, India
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+                    PAN Number
+                  </p>
+                  <p className="text-[var(--foreground)] font-mono">
+                    AALCD5985D
                   </p>
                 </div>
                 <div>
@@ -146,7 +163,7 @@ export default function SettingsPage() {
                     TAN Number
                   </p>
                   <p className="text-[var(--foreground)] font-mono">
-                    DELXXXXX (Update in production)
+                    LKND11553D
                   </p>
                 </div>
               </div>

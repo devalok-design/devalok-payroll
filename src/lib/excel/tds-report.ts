@@ -50,8 +50,18 @@ export async function generateTDSReportExcel(
 
   // Company info
   worksheet.mergeCells('A2:I2')
-  worksheet.getCell('A2').value = 'Devalok Design Private Limited'
+  worksheet.getCell('A2').value = 'Devalok Design and Strategy Studio Private Limited'
   worksheet.getCell('A2').alignment = { horizontal: 'center' }
+
+  worksheet.mergeCells('A3:I3')
+  worksheet.getCell('A3').value = 'FF-91, Khajana Complex, Sector - K, Aashiyana, Lucknow 226012, UP, India'
+  worksheet.getCell('A3').alignment = { horizontal: 'center' }
+  worksheet.getCell('A3').font = { size: 9, color: { argb: 'FF666666' } }
+
+  worksheet.mergeCells('A4:I4')
+  worksheet.getCell('A4').value = 'PAN: AALCD5985D | TAN: LKND11553D'
+  worksheet.getCell('A4').alignment = { horizontal: 'center' }
+  worksheet.getCell('A4').font = { size: 10, color: { argb: 'FF666666' } }
 
   // Empty row
   worksheet.addRow([])
@@ -132,7 +142,7 @@ export async function generateTDSReportExcel(
   worksheet.getColumn(9).numFmt = '₹#,##0.00'
 
   // Add borders to data area
-  const dataStartRow = 4
+  const dataStartRow = 6
   const dataEndRow = worksheet.rowCount
   for (let row = dataStartRow; row <= dataEndRow; row++) {
     for (let col = 1; col <= 9; col++) {
@@ -172,8 +182,13 @@ export async function generateAnnualTDSSummary(
   titleCell.alignment = { horizontal: 'center' }
 
   worksheet.mergeCells('A2:H2')
-  worksheet.getCell('A2').value = 'Devalok Design Private Limited'
+  worksheet.getCell('A2').value = 'Devalok Design and Strategy Studio Private Limited'
   worksheet.getCell('A2').alignment = { horizontal: 'center' }
+
+  worksheet.mergeCells('A3:H3')
+  worksheet.getCell('A3').value = 'PAN: AALCD5985D | TAN: LKND11553D'
+  worksheet.getCell('A3').alignment = { horizontal: 'center' }
+  worksheet.getCell('A3').font = { size: 10, color: { argb: 'FF666666' } }
 
   worksheet.addRow([])
 
