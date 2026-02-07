@@ -46,6 +46,7 @@ export async function GET(
     }
 
     const runDate = new Date(debtRun.runDate)
+    const today = new Date() // Use current date for transaction date
     let buffer: Buffer
     let filename: string
 
@@ -66,7 +67,7 @@ export async function GET(
         transactionCurrency: 'INR',
         beneficiaryName: p.lokwasi.name,
         beneficiaryAccountNumber: p.snapshotBankAccount!,
-        transactionDate: formatAxisDate(runDate),
+        transactionDate: formatAxisDate(today),
         customerReference: p.customerReference!,
         beneficiaryCode: p.lokwasi.beneficiaryNickname,
       }))
@@ -91,7 +92,7 @@ export async function GET(
         beneficiaryName: p.lokwasi.name,
         beneficiaryAccountNumber: p.snapshotBankAccount!,
         beneficiaryIfsc: p.snapshotIfsc!,
-        transactionDate: formatNEFTDate(runDate),
+        transactionDate: formatNEFTDate(today),
         paymentMode: 'N', // NEFT
         customerReference: p.customerReference!,
         beneficiaryNickname: p.lokwasi.beneficiaryNickname,
