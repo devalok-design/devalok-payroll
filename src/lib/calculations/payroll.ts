@@ -164,6 +164,21 @@ export function generateCustomerReference(
 }
 
 /**
+ * Generate customer reference for debt payment
+ * Format: DEBT-YYYYMMDD-XXX
+ */
+export function generateDebtReference(
+  date: Date,
+  sequenceNumber: number
+): string {
+  const year = date.getFullYear()
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  const seq = sequenceNumber.toString().padStart(3, '0')
+  return `DEBT-${year}${month}${day}-${seq}`
+}
+
+/**
  * Get next payroll date based on last payroll date
  * Payroll runs every 14 days
  */

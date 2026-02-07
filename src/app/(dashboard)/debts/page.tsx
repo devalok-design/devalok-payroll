@@ -8,6 +8,8 @@ import {
   TrendingDown,
   Wallet,
   Users,
+  Plus,
+  ArrowRight,
 } from 'lucide-react'
 
 async function getDebtData() {
@@ -52,10 +54,20 @@ async function getDebtData() {
     },
   })
 
+  // Get recent debt runs
+  const recentDebtRuns = await prisma.debtRun.findMany({
+    orderBy: { runDate: 'desc' },
+    take: 5,
+    include: {
+      _count: { select: { debtPayments: true } },
+    },
+  })
+
   return {
     lokwasis,
     totalPaid: Number(totalPaid._sum.amount || 0),
     recentPayments,
+    recentDebtRuns,
   }
 }
 
@@ -80,6 +92,26 @@ export default async function DebtsPage() {
       <Header title="Salary Debts" />
 
       <main className="flex-1 overflow-y-auto p-6">
+        {/* Action Bar */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/debts/runs"
+              className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+            >
+              View all debt runs
+              <ArrowRight className="w-3 h-3 inline ml-1" />
+            </Link>
+          </div>
+          <Link
+            href="/debts/process"
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white font-medium text-sm hover:bg-[var(--devalok-700)] transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Process Debt Payments
+          </Link>
+        </div>
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white p-4 border border-[var(--border)]">
@@ -154,8 +186,8 @@ export default async function DebtsPage() {
               <p className="text-sm text-[var(--muted-foreground)] mt-1">
                 These are pending salary amounts from when Devalok transitioned from a
                 sole proprietorship to a private limited company. Debt payouts can be
-                included in regular payroll runs. Note: Debt payouts are not subject to
-                TDS as they represent previously earned salary.
+                processed via standalone debt runs or included in regular payroll runs.
+                TDS is deducted from debt payouts and included in monthly TDS reports.
               </p>
             </div>
           </div>

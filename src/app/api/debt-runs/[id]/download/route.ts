@@ -7,7 +7,7 @@ import { generateNEFTExcel, formatNEFTDate } from '@/lib/excel/neft-template'
 // Default debit account (should come from settings in production)
 const DEBIT_ACCOUNT = '923020036498498' // Devalok's Axis Bank account
 
-// GET /api/payroll/[id]/download?type=axis|neft
+// GET /api/debt-runs/[id]/download?type=axis|neft
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -22,10 +22,10 @@ export async function GET(
   const type = searchParams.get('type') || 'axis'
 
   try {
-    const payrollRun = await prisma.payrollRun.findUnique({
+    const debtRun = await prisma.debtRun.findUnique({
       where: { id },
       include: {
-        payments: {
+        debtPayments: {
           include: {
             lokwasi: {
               select: {
@@ -41,21 +41,21 @@ export async function GET(
       },
     })
 
-    if (!payrollRun) {
-      return NextResponse.json({ error: 'Payroll run not found' }, { status: 404 })
+    if (!debtRun) {
+      return NextResponse.json({ error: 'Debt run not found' }, { status: 404 })
     }
 
-    const runDate = new Date(payrollRun.runDate)
+    const runDate = new Date(debtRun.runDate)
     let buffer: Buffer
     let filename: string
 
     if (type === 'axis') {
       // Filter Axis Bank payments only
-      const axisPayments = payrollRun.payments.filter((p) => p.snapshotIsAxisBank)
+      const axisPayments = debtRun.debtPayments.filter((p) => p.snapshotIsAxisBank)
 
       if (axisPayments.length === 0) {
         return NextResponse.json(
-          { error: 'No Axis Bank payments in this payroll run' },
+          { error: 'No Axis Bank payments in this debt run' },
           { status: 400 }
         )
       }
@@ -65,21 +65,21 @@ export async function GET(
         transactionAmount: Number(p.netAmount),
         transactionCurrency: 'INR',
         beneficiaryName: p.lokwasi.name,
-        beneficiaryAccountNumber: p.snapshotBankAccount,
+        beneficiaryAccountNumber: p.snapshotBankAccount!,
         transactionDate: formatAxisDate(runDate),
-        customerReference: p.customerReference,
+        customerReference: p.customerReference!,
         beneficiaryCode: p.lokwasi.beneficiaryNickname,
       }))
 
       buffer = await generateAxisExcel(paymentData, DEBIT_ACCOUNT)
-      filename = `devalok-axis-${runDate.toISOString().split('T')[0]}.xlsx`
+      filename = `devalok-debt-axis-${runDate.toISOString().split('T')[0]}.xlsx`
     } else {
       // NEFT payments (non-Axis banks)
-      const neftPayments = payrollRun.payments.filter((p) => !p.snapshotIsAxisBank)
+      const neftPayments = debtRun.debtPayments.filter((p) => !p.snapshotIsAxisBank)
 
       if (neftPayments.length === 0) {
         return NextResponse.json(
-          { error: 'No NEFT payments in this payroll run' },
+          { error: 'No NEFT payments in this debt run' },
           { status: 400 }
         )
       }
@@ -89,17 +89,17 @@ export async function GET(
         transactionAmount: Number(p.netAmount),
         transactionCurrency: 'INR',
         beneficiaryName: p.lokwasi.name,
-        beneficiaryAccountNumber: p.snapshotBankAccount,
-        beneficiaryIfsc: p.snapshotIfsc,
+        beneficiaryAccountNumber: p.snapshotBankAccount!,
+        beneficiaryIfsc: p.snapshotIfsc!,
         transactionDate: formatNEFTDate(runDate),
         paymentMode: 'N', // NEFT
-        customerReference: p.customerReference,
+        customerReference: p.customerReference!,
         beneficiaryNickname: p.lokwasi.beneficiaryNickname,
-        creditNarration: `Salary ${runDate.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}`,
+        creditNarration: `Debt Payout ${runDate.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}`,
       }))
 
       buffer = await generateNEFTExcel(paymentData, DEBIT_ACCOUNT)
-      filename = `devalok-neft-${runDate.toISOString().split('T')[0]}.xlsx`
+      filename = `devalok-debt-neft-${runDate.toISOString().split('T')[0]}.xlsx`
     }
 
     // Convert Node.js Buffer to Uint8Array for proper BodyInit compatibility

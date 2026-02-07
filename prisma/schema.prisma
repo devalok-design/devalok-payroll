@@ -26,6 +26,8 @@ model User {
   createdLokwasis    Lokwasi[]       @relation("CreatedBy")
   createdPayrollRuns PayrollRun[]    @relation("CreatedBy")
   processedPayrollRuns PayrollRun[]  @relation("ProcessedBy")
+  createdDebtRuns    DebtRun[]       @relation("DebtRunCreatedBy")
+  processedDebtRuns  DebtRun[]       @relation("DebtRunProcessedBy")
   auditLogs          AuditLog[]
   leaveTransactions  LeaveTransaction[]
   settingsUpdates    Setting[]
@@ -265,19 +267,76 @@ enum LeaveTransactionType {
 // SALARY DEBT MANAGEMENT
 // ============================================
 
+model DebtRun {
+  id              String          @id @default(cuid())
+  runDate         DateTime        @map("run_date")
+  status          DebtRunStatus   @default(PENDING)
+
+  // Totals
+  totalGross      Decimal         @default(0) @map("total_gross") @db.Decimal(14, 2)
+  totalTds        Decimal         @default(0) @map("total_tds") @db.Decimal(14, 2)
+  totalNet        Decimal         @default(0) @map("total_net") @db.Decimal(14, 2)
+  employeeCount   Int             @default(0) @map("employee_count")
+
+  notes           String?
+
+  // Timestamps
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  processedAt     DateTime?       @map("processed_at")
+  paidAt          DateTime?       @map("paid_at")
+
+  // Relations
+  createdById     String?         @map("created_by_id")
+  createdBy       User?           @relation("DebtRunCreatedBy", fields: [createdById], references: [id])
+  processedById   String?         @map("processed_by_id")
+  processedBy     User?           @relation("DebtRunProcessedBy", fields: [processedById], references: [id])
+
+  debtPayments    DebtPayment[]
+
+  @@map("debt_runs")
+}
+
+enum DebtRunStatus {
+  PENDING     // Created, waiting for review
+  PROCESSED   // Excel downloaded, sent to bank
+  PAID        // Confirmed paid
+  CANCELLED   // Voided
+}
+
 model DebtPayment {
   id              String          @id @default(cuid())
   lokwasiId       String          @map("lokwasi_id")
   lokwasi         Lokwasi         @relation(fields: [lokwasiId], references: [id])
-  paymentId       String?         @map("payment_id") // Linked to payroll payment if included
+
+  // Link to payroll payment (if included in regular payroll)
+  paymentId       String?         @map("payment_id")
   payment         Payment?        @relation(fields: [paymentId], references: [id])
-  amount          Decimal         @db.Decimal(12, 2) // Debt amount paid/added
+
+  // Link to standalone debt run
+  debtRunId       String?         @map("debt_run_id")
+  debtRun         DebtRun?        @relation(fields: [debtRunId], references: [id])
+
+  // Financial details
+  amount          Decimal         @db.Decimal(12, 2) // Gross debt amount paid/added
+  tdsRate         Decimal?        @map("tds_rate") @db.Decimal(5, 2) // TDS rate at time of payment
+  tdsAmount       Decimal?        @map("tds_amount") @db.Decimal(12, 2) // TDS deducted
+  netAmount       Decimal?        @map("net_amount") @db.Decimal(12, 2) // Amount actually paid (gross - TDS)
   balanceAfter    Decimal         @map("balance_after") @db.Decimal(14, 2)
+
   source          DebtSource      @default(SALARY) // Source of debt
   sourceYear      Int?            @map("source_year") // Year the debt is from
   isAddition      Boolean         @default(false) @map("is_addition") // true = adding debt, false = paying off
   paymentDate     DateTime        @map("payment_date")
   notes           String?
+
+  // Bank snapshot for standalone debt runs
+  customerReference   String?     @map("customer_reference")
+  snapshotBankAccount String?     @map("snapshot_bank_account")
+  snapshotIfsc        String?     @map("snapshot_ifsc")
+  snapshotBankName    String?     @map("snapshot_bank_name")
+  snapshotIsAxisBank  Boolean?    @map("snapshot_is_axis_bank")
+
   createdAt       DateTime        @default(now()) @map("created_at")
 
   @@map("debt_payments")
