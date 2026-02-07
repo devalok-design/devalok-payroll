@@ -14,6 +14,7 @@ import {
   Loader2,
   XCircle,
   AlertTriangle,
+  RefreshCw,
 } from 'lucide-react'
 
 interface Payment {
@@ -66,6 +67,7 @@ export default function PayrollDetailPage({
   const [isLoading, setIsLoading] = useState(true)
   const [isDownloading, setIsDownloading] = useState<string | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isRerunning, setIsRerunning] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -139,6 +141,31 @@ export default function PayrollDetailPage({
       setError('Failed to update status')
     } finally {
       setIsUpdating(false)
+    }
+  }
+
+  const handleRerun = async () => {
+    if (!confirm('This will create a new payroll run with fresh employee bank details and cancel this one. Continue?')) {
+      return
+    }
+    setIsRerunning(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/payroll/${id}/rerun`, {
+        method: 'POST',
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to re-run payroll')
+      }
+      const data = await response.json()
+      // Redirect to the new payroll run
+      router.push(`/payroll/${data.payrollRun.id}`)
+    } catch (err) {
+      console.error('Re-run error:', err)
+      setError(err instanceof Error ? err.message : 'Failed to re-run payroll')
+    } finally {
+      setIsRerunning(false)
     }
   }
 
@@ -239,7 +266,7 @@ export default function PayrollDetailPage({
             {payroll.status === 'PROCESSED' && (
               <button
                 onClick={() => updateStatus('PAID')}
-                disabled={isUpdating}
+                disabled={isUpdating || isRerunning}
                 className="flex items-center gap-2 px-4 py-2 bg-[var(--success)] text-white font-medium text-sm hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
                 {isUpdating ? (
@@ -250,10 +277,24 @@ export default function PayrollDetailPage({
                 Mark as Paid
               </button>
             )}
+            {payroll.status !== 'PAID' && (
+              <button
+                onClick={handleRerun}
+                disabled={isUpdating || isRerunning}
+                className="flex items-center gap-2 px-4 py-2 border border-[var(--primary)] text-[var(--primary)] font-medium text-sm hover:bg-[var(--devalok-50)] disabled:opacity-50 transition-colors"
+              >
+                {isRerunning ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Re-run with Fresh Data
+              </button>
+            )}
             {payroll.status === 'PENDING' && (
               <button
                 onClick={() => updateStatus('CANCELLED')}
-                disabled={isUpdating}
+                disabled={isUpdating || isRerunning}
                 className="flex items-center gap-2 px-4 py-2 border border-[var(--error)] text-[var(--error)] font-medium text-sm hover:bg-[var(--error-light)] disabled:opacity-50 transition-colors"
               >
                 {isUpdating ? (
