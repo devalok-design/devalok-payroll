@@ -39,6 +39,7 @@
   --error: #D2222D;
   --error-light: #fee2e2;
   --info: #43B2ED;
+  --info-light: #dbeafe;
 
   /* shadcn Theme Variables - Light Mode */
   --radius: 0.25rem;
@@ -160,6 +161,7 @@
   --color-error: var(--error);
   --color-error-light: var(--error-light);
   --color-info: var(--info);
+  --color-info-light: var(--info-light);
 
   /* Radius - Small rounded corners */
   --radius-sm: calc(var(--radius) - 2px);

@@ -203,7 +203,7 @@ export default function DebtRunDetailPage({
                 debtRun.status === 'PAID'
                   ? 'bg-[var(--success-light)] text-[var(--success)]'
                   : debtRun.status === 'PROCESSED'
-                  ? 'bg-[var(--info)] bg-opacity-20 text-[var(--info)]'
+                  ? 'bg-[var(--info-light)] text-[var(--info)]'
                   : debtRun.status === 'PENDING'
                   ? 'bg-[var(--warning-light)] text-[var(--warning)]'
                   : debtRun.status === 'CANCELLED'

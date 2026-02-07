@@ -42,7 +42,7 @@ function getStatusIcon(status: string) {
 function getStatusBadge(status: string) {
   const styles: Record<string, string> = {
     PAID: 'bg-[var(--success-light)] text-[var(--success)]',
-    PROCESSED: 'bg-[var(--info)] bg-opacity-20 text-[var(--info)]',
+    PROCESSED: 'bg-[var(--info-light)] text-[var(--info)]',
     PENDING: 'bg-[var(--warning-light)] text-[var(--warning)]',
     CANCELLED: 'bg-[var(--error-light)] text-[var(--error)]',
   }

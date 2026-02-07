@@ -371,7 +371,7 @@ export default function TdsMonthDetailPage({
                             : record.filingStatus === 'FILED'
                             ? 'bg-[var(--devalok-100)] text-[var(--primary)]'
                             : record.filingStatus === 'WAITING_FOR_FILING'
-                            ? 'bg-[var(--info)] bg-opacity-20 text-[var(--info)]'
+                            ? 'bg-[var(--info-light)] text-[var(--info)]'
                             : 'bg-[var(--warning-light)] text-[var(--warning)]'
                         }`}
                       >

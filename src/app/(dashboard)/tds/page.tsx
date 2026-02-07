@@ -89,7 +89,7 @@ function getStatusBadge(status: string) {
       icon: Clock,
     },
     WAITING_FOR_FILING: {
-      bg: 'bg-[var(--info)] bg-opacity-20',
+      bg: 'bg-[var(--info-light)]',
       text: 'text-[var(--info)]',
       icon: FileText,
     },

@@ -206,7 +206,7 @@ export default function PayrollDetailPage({
                 payroll.status === 'PAID'
                   ? 'bg-[var(--success-light)] text-[var(--success)]'
                   : payroll.status === 'PROCESSED'
-                  ? 'bg-[var(--info)] bg-opacity-20 text-[var(--info)]'
+                  ? 'bg-[var(--info-light)] text-[var(--info)]'
                   : payroll.status === 'PENDING'
                   ? 'bg-[var(--warning-light)] text-[var(--warning)]'
                   : payroll.status === 'CANCELLED'
