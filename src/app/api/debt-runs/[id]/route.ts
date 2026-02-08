@@ -179,10 +179,12 @@ export async function PATCH(
       })
 
       // When marking as PAID, update TDS monthly records
+      // Use CURRENT date (when payment is processed) not the run date,
+      // since TDS is reported in the month of actual payment
       if (status === 'PAID') {
-        const runDate = new Date(run.runDate)
-        const year = runDate.getFullYear()
-        const month = runDate.getMonth() + 1
+        const paidDate = new Date()
+        const year = paidDate.getFullYear()
+        const month = paidDate.getMonth() + 1
 
         for (const payment of run.debtPayments) {
           // Skip if no TDS calculated
@@ -270,8 +272,9 @@ export async function PATCH(
     return NextResponse.json({ debtRun: transformedRun })
   } catch (error) {
     console.error('Error updating debt run:', error)
+    const message = error instanceof Error ? error.message : 'Failed to update debt run'
     return NextResponse.json(
-      { error: 'Failed to update debt run' },
+      { error: message },
       { status: 500 }
     )
   }

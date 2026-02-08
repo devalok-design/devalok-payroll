@@ -177,10 +177,11 @@ export async function PATCH(
           },
         })
 
-        // Update TDS monthly records
-        const runDate = new Date(run.runDate)
-        const year = runDate.getFullYear()
-        const month = runDate.getMonth() + 1
+        // Update TDS monthly records - use CURRENT date (when payment is processed)
+        // not the payroll run date, since TDS is reported in the month of actual payment
+        const paidDate = new Date() // Today's date when marking as paid
+        const year = paidDate.getFullYear()
+        const month = paidDate.getMonth() + 1
 
         for (const payment of payments) {
           // Find or create TDS monthly record
@@ -261,8 +262,9 @@ export async function PATCH(
     return NextResponse.json({ payrollRun: transformedRun })
   } catch (error) {
     console.error('Error updating payroll run:', error)
+    const message = error instanceof Error ? error.message : 'Failed to update payroll run'
     return NextResponse.json(
-      { error: 'Failed to update payroll run' },
+      { error: message },
       { status: 500 }
     )
   }
