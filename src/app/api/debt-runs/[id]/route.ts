@@ -247,6 +247,8 @@ export async function PATCH(
       })
 
       return run
+    }, {
+      timeout: 30000, // 30 seconds - default is 5 seconds which times out with many TDS records
     })
 
     // Transform Decimal to number for JSON
