@@ -36,7 +36,7 @@ export async function GET() {
     return NextResponse.json({
       schedule,
       users,
-      debitAccount: debitAccountSetting?.value || '923020036498498',
+      debitAccount: debitAccountSetting?.value || '925020020822684',
     })
   } catch (error) {
     console.error('Error fetching settings:', error)

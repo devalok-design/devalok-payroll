@@ -33,7 +33,7 @@ interface User {
 export default function SettingsPage() {
   const [schedule, setSchedule] = useState<PayrollSchedule | null>(null)
   const [users, setUsers] = useState<User[]>([])
-  const [debitAccount, setDebitAccount] = useState('923020036498498')
+  const [debitAccount, setDebitAccount] = useState('925020020822684')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')

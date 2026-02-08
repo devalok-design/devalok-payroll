@@ -5,7 +5,7 @@ import { generateAxisExcel, formatAxisDate } from '@/lib/excel/axis-template'
 import { generateNEFTExcel, formatNEFTDate } from '@/lib/excel/neft-template'
 
 // Default debit account (should come from settings in production)
-const DEBIT_ACCOUNT = '923020036498498' // Devalok's Axis Bank account
+const DEBIT_ACCOUNT = '925020020822684' // Devalok's Axis Bank account
 
 // GET /api/payroll/[id]/download?type=axis|neft
 export async function GET(
