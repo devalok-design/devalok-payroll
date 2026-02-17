@@ -142,7 +142,7 @@ export async function PATCH(
       updateData.status = status as DebtRunStatus
       if (status === 'PROCESSED' && oldRun.status !== 'PROCESSED') {
         updateData.processedAt = new Date()
-        updateData.processedById = session.user.id
+        updateData.processedById = session!.user.id
       }
       if (status === 'PAID' && oldRun.status !== 'PAID') {
         updateData.paidAt = new Date()
@@ -237,7 +237,7 @@ export async function PATCH(
       // Create audit log
       await tx.auditLog.create({
         data: {
-          userId: session.user.id,
+          userId: session!.user.id,
           action: `UPDATE_DEBT_RUN_${status || 'NOTES'}`,
           entityType: 'debt_run',
           entityId: run.id,

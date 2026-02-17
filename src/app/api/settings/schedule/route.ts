@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: session!.user.id,
         action: 'UPDATE_PAYROLL_SCHEDULE',
         entityType: 'payroll_schedule',
         entityId: schedule.id,

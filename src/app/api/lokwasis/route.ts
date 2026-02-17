@@ -3,13 +3,13 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { lokwasiSchema } from '@/lib/validators/lokwasi'
 import { z } from 'zod'
+import { requireViewer, requireAdmin } from '@/lib/rbac'
 
 // GET /api/lokwasis - List all lokwasis
 export async function GET() {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireViewer(session)
+  if (rbacError) return rbacError
 
   try {
     const lokwasis = await prisma.lokwasi.findMany({
@@ -29,9 +29,8 @@ export async function GET() {
 // POST /api/lokwasis - Create a new lokwasi
 export async function POST(request: NextRequest) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireAdmin(session)
+  if (rbacError) return rbacError
 
   try {
     const body = await request.json()
@@ -68,14 +67,14 @@ export async function POST(request: NextRequest) {
         salaryDebtBalance: validatedData.salaryDebtBalance,
         joinedDate: validatedData.joinedDate,
         status: validatedData.status,
-        createdById: session.user.id,
+        createdById: session!.user.id,
       },
     })
 
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: session!.user.id,
         action: 'CREATE_LOKWASI',
         entityType: 'lokwasi',
         entityId: lokwasi.id,

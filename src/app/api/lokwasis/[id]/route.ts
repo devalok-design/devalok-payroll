@@ -158,7 +158,7 @@ export async function PUT(
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: session!.user.id,
         action: 'UPDATE_LOKWASI',
         entityType: 'lokwasi',
         entityId: lokwasi.id,
@@ -230,7 +230,7 @@ export async function DELETE(
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: session!.user.id,
         action: 'DELETE_LOKWASI',
         entityType: 'lokwasi',
         entityId: lokwasi.id,

@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getPayPeriod, generateCustomerReference } from '@/lib/calculations/payroll'
+import { requireViewer, requireAdmin } from '@/lib/rbac'
 
 // GET /api/payroll - List all payroll runs
 export async function GET() {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireViewer(session)
+  if (rbacError) return rbacError
 
   try {
     const payrollRuns = await prisma.payrollRun.findMany({
@@ -31,9 +31,8 @@ export async function GET() {
 // POST /api/payroll - Create a new payroll run
 export async function POST(request: NextRequest) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireAdmin(session)
+  if (rbacError) return rbacError
 
   try {
     const body = await request.json()
@@ -178,7 +177,7 @@ export async function POST(request: NextRequest) {
           totalDebtPayout: totals.totalDebtPayout,
           totalLeaveCashout: totals.totalLeaveCashout,
           employeeCount: paymentData.length,
-          createdById: session.user.id,
+          createdById: session!.user.id,
           payments: {
             create: paymentData,
           },
@@ -242,7 +241,7 @@ export async function POST(request: NextRequest) {
               balanceAfter: updatedLokwasi!.leaveBalance,
               paymentId: run.payments.find((p) => p.lokwasiId === lokwasi.id)?.id,
               transactionDate: runDateObj,
-              createdById: session.user.id,
+              createdById: session!.user.id,
               notes: `Leave cashout for payroll ${run.id}`,
             },
           })
@@ -266,7 +265,7 @@ export async function POST(request: NextRequest) {
       // Create audit log
       await tx.auditLog.create({
         data: {
-          userId: session.user.id,
+          userId: session!.user.id,
           action: 'CREATE_PAYROLL_RUN',
           entityType: 'payroll_run',
           entityId: run.id,

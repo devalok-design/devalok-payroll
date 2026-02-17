@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateDebtReference, calculateTds } from '@/lib/calculations/payroll'
+import { requireViewer, requireAdmin } from '@/lib/rbac'
 
 // GET /api/debt-runs - List all debt runs
 export async function GET() {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireViewer(session)
+  if (rbacError) return rbacError
 
   try {
     const debtRuns = await prisma.debtRun.findMany({
@@ -39,9 +39,8 @@ export async function GET() {
 // POST /api/debt-runs - Create a new standalone debt run
 export async function POST(request: NextRequest) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireAdmin(session)
+  if (rbacError) return rbacError
 
   try {
     const body = await request.json()
@@ -130,7 +129,7 @@ export async function POST(request: NextRequest) {
           totalTds: totals.totalTds,
           totalNet: totals.totalNet,
           employeeCount: paymentData.length,
-          createdById: session.user.id,
+          createdById: session!.user.id,
         },
       })
 
@@ -171,7 +170,7 @@ export async function POST(request: NextRequest) {
       // Create audit log
       await tx.auditLog.create({
         data: {
-          userId: session.user.id,
+          userId: session!.user.id,
           action: 'CREATE_DEBT_RUN',
           entityType: 'debt_run',
           entityId: run.id,

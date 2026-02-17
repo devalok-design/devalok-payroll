@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/rbac'
 
 /**
  * POST /api/payroll/generate
@@ -9,9 +10,8 @@ import { prisma } from '@/lib/prisma'
  */
 export async function POST() {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireAdmin(session)
+  if (rbacError) return rbacError
 
   try {
     // Get the active payroll schedule
@@ -142,7 +142,7 @@ export async function POST() {
           totalDebtPayout: 0,
           totalLeaveCashout: 0,
           employeeCount: paymentRecords.length,
-          createdById: session.user.id,
+          createdById: session!.user.id,
           payments: {
             create: paymentRecords,
           },
@@ -159,7 +159,7 @@ export async function POST() {
       // Create audit log
       await prisma.auditLog.create({
         data: {
-          userId: session.user.id,
+          userId: session!.user.id,
           action: 'AUTO_GENERATE_PAYROLL',
           entityType: 'payroll_run',
           entityId: run.id,

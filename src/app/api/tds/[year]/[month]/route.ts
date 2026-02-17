@@ -133,7 +133,7 @@ export async function PATCH(
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: session!.user.id,
         action: 'UPDATE_TDS_STATUS',
         entityType: 'tds_monthly',
         entityId: `${yearNum}-${monthNum}`,

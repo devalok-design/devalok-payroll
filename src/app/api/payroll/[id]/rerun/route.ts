@@ -131,7 +131,7 @@ export async function POST(
           totalDebtPayout: totals.totalDebtPayout,
           totalLeaveCashout: totals.totalLeaveCashout,
           employeeCount: paymentData.length,
-          createdById: session.user.id,
+          createdById: session!.user.id,
           payments: {
             create: paymentData,
           },
@@ -156,7 +156,7 @@ export async function POST(
       // Create audit log
       await tx.auditLog.create({
         data: {
-          userId: session.user.id,
+          userId: session!.user.id,
           action: 'RERUN_PAYROLL',
           entityType: 'payroll_run',
           entityId: run.id,

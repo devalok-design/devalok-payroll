@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { PayrollStatus } from '@prisma/client'
+import { requireViewer, requireAdmin } from '@/lib/rbac'
 
 // GET /api/payroll/[id] - Get a single payroll run with payments
 export async function GET(
@@ -9,9 +10,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireViewer(session)
+  if (rbacError) return rbacError
 
   const { id } = await params
 
@@ -77,9 +77,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireAdmin(session)
+  if (rbacError) return rbacError
 
   const { id } = await params
 
@@ -123,7 +122,7 @@ export async function PATCH(
       updateData.status = status as PayrollStatus
       if (status === 'PROCESSED' && oldRun.status !== 'PROCESSED') {
         updateData.processedAt = new Date()
-        updateData.processedById = session.user.id
+        updateData.processedById = session!.user.id
       }
       if (status === 'PAID' && oldRun.status !== 'PAID') {
         updateData.paidAt = new Date()
@@ -294,7 +293,7 @@ export async function PATCH(
       // Create audit log
       await tx.auditLog.create({
         data: {
-          userId: session.user.id,
+          userId: session!.user.id,
           action: `UPDATE_PAYROLL_RUN_${status || 'NOTES'}`,
           entityType: 'payroll_run',
           entityId: run.id,
