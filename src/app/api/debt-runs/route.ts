@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         tdsRate,
         tdsAmount,
         netAmount,
-        balanceAfter: Number(lokwasi.salaryDebtBalance) - grossAmount,
+        // balanceAfter will be calculated after the update in the transaction
         customerReference,
         paymentDate: runDateObj,
         notes: p.notes || `Standalone debt payout`,
@@ -145,7 +145,13 @@ export async function POST(request: NextRequest) {
           },
         })
 
-        // Create debt payment record
+        // Get updated balance after decrement
+        const updatedLokwasi = await tx.lokwasi.findUnique({
+          where: { id: payment.lokwasiId },
+          select: { salaryDebtBalance: true },
+        })
+
+        // Create debt payment record with correct running balance
         await tx.debtPayment.create({
           data: {
             lokwasiId: payment.lokwasiId,
@@ -154,7 +160,7 @@ export async function POST(request: NextRequest) {
             tdsRate: payment.tdsRate,
             tdsAmount: payment.tdsAmount,
             netAmount: payment.netAmount,
-            balanceAfter: payment.balanceAfter,
+            balanceAfter: updatedLokwasi!.salaryDebtBalance,
             customerReference: payment.customerReference,
             paymentDate: payment.paymentDate,
             notes: payment.notes,
