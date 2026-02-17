@@ -329,6 +329,24 @@ async function main() {
   })
   console.log(`  ✓ Admin user created: ${admin.email}`)
 
+  // Create debit account setting
+  console.log('\nCreating system settings...')
+  await prisma.setting.upsert({
+    where: { key: 'debit_account' },
+    update: {
+      value: '925020020822684',
+      description: 'Devalok Axis Bank debit account number for salary payments',
+      updatedById: admin.id,
+    },
+    create: {
+      key: 'debit_account',
+      value: '925020020822684',
+      description: 'Devalok Axis Bank debit account number for salary payments',
+      updatedById: admin.id,
+    },
+  })
+  console.log('  ✓ Debit account setting created')
+
   // Delete existing data to start fresh
   console.log('\nClearing existing data...')
   await prisma.payment.deleteMany({})

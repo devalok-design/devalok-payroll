@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getDebitAccount } from '@/lib/settings'
 
 // GET /api/settings - Get all settings
 export async function GET() {
@@ -29,14 +30,12 @@ export async function GET() {
     })
 
     // Get debit account from settings
-    const debitAccountSetting = await prisma.setting.findUnique({
-      where: { key: 'debit_account' },
-    })
+    const debitAccount = await getDebitAccount()
 
     return NextResponse.json({
       schedule,
       users,
-      debitAccount: debitAccountSetting?.value || '925020020822684',
+      debitAccount,
     })
   } catch (error) {
     console.error('Error fetching settings:', error)

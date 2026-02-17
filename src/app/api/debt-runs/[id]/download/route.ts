@@ -3,9 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateAxisExcel, formatAxisDate } from '@/lib/excel/axis-template'
 import { generateNEFTExcel, formatNEFTDate } from '@/lib/excel/neft-template'
-
-// Default debit account (should come from settings in production)
-const DEBIT_ACCOUNT = '925020020822684' // Devalok's Axis Bank account
+import { getDebitAccount } from '@/lib/settings'
 
 // GET /api/debt-runs/[id]/download?type=axis|neft
 export async function GET(
@@ -22,6 +20,9 @@ export async function GET(
   const type = searchParams.get('type') || 'axis'
 
   try {
+    // Fetch debit account from settings
+    const DEBIT_ACCOUNT = await getDebitAccount()
+
     const debtRun = await prisma.debtRun.findUnique({
       where: { id },
       include: {
