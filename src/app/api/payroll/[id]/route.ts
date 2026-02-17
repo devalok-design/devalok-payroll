@@ -135,12 +135,7 @@ export async function PATCH(
     }
 
     const payrollRun = await prisma.$transaction(async (tx) => {
-      const run = await tx.payrollRun.update({
-        where: { id },
-        data: updateData,
-      })
-
-      // Get payments for this payroll run
+      // Get payments for this payroll run (needed for both cleanup and PAID operations)
       const payments = await tx.payment.findMany({
         where: { payrollRunId: id },
         include: {
@@ -154,6 +149,70 @@ export async function PATCH(
             },
           },
         },
+      })
+
+      // Clean up TDS records when reverting from PROCESSED/PAID to PENDING
+      if (status === 'PENDING' && (oldRun.status === 'PROCESSED' || oldRun.status === 'PAID')) {
+        // If payroll was PAID, TDS records were created - we need to reverse them
+        if (oldRun.status === 'PAID' && oldRun.paidAt) {
+          const paidDate = oldRun.paidAt
+          const year = paidDate.getFullYear()
+          const month = paidDate.getMonth() + 1
+
+          for (const payment of payments) {
+            // Find the TDS monthly record
+            const existingTds = await tx.tdsMonthly.findUnique({
+              where: {
+                year_month_lokwasiId: {
+                  year,
+                  month,
+                  lokwasiId: payment.lokwasiId,
+                },
+              },
+            })
+
+            if (existingTds) {
+              // Decrement the TDS amounts that were added when marking as PAID
+              const newTotalGross = Number(existingTds.totalGross) - (Number(payment.grossAmount) + Number(payment.leaveCashoutAmount))
+              const newTotalTds = Number(existingTds.totalTds) - Number(payment.tdsAmount)
+              const newTotalNet = Number(existingTds.totalNet) - Number(payment.netAmount)
+              const newPaymentCount = existingTds.paymentCount - 1
+
+              if (newPaymentCount <= 0) {
+                // Delete the record if this was the only payment
+                await tx.tdsMonthly.delete({
+                  where: { id: existingTds.id },
+                })
+              } else {
+                // Update with decremented values
+                await tx.tdsMonthly.update({
+                  where: { id: existingTds.id },
+                  data: {
+                    totalGross: newTotalGross,
+                    totalTds: newTotalTds,
+                    totalNet: newTotalNet,
+                    paymentCount: newPaymentCount,
+                    totalTdsPayable: newTotalTds,
+                  },
+                })
+              }
+            }
+          }
+
+          // Revert payment statuses back to PENDING
+          await tx.payment.updateMany({
+            where: { payrollRunId: id },
+            data: {
+              paymentStatus: 'PENDING',
+              paidAt: null,
+            },
+          })
+        }
+      }
+
+      const run = await tx.payrollRun.update({
+        where: { id },
+        data: updateData,
       })
 
       // Update payment statuses when marking payroll as PAID

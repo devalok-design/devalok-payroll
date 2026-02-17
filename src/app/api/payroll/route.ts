@@ -62,6 +62,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate leave and debt balances before proceeding
+    for (const p of payments) {
+      const lokwasi = lokwasis.find((l) => l.id === p.lokwasiId)!
+      const leaveCashoutDays = p.leaveCashoutDays || 0
+      const debtPayoutAmount = p.debtPayoutAmount || 0
+
+      // Validate leave balance
+      if (leaveCashoutDays > 0 && leaveCashoutDays > Number(lokwasi.leaveBalance)) {
+        return NextResponse.json(
+          {
+            error: `Insufficient leave balance for ${lokwasi.name}. ` +
+                   `Requested: ${leaveCashoutDays} days, Available: ${Number(lokwasi.leaveBalance)} days`
+          },
+          { status: 400 }
+        )
+      }
+
+      // Validate debt balance
+      if (debtPayoutAmount > 0 && debtPayoutAmount > Number(lokwasi.salaryDebtBalance)) {
+        return NextResponse.json(
+          {
+            error: `Insufficient debt balance for ${lokwasi.name}. ` +
+                   `Requested: ₹${debtPayoutAmount}, Available: ₹${Number(lokwasi.salaryDebtBalance)}`
+          },
+          { status: 400 }
+        )
+      }
+    }
+
     // Calculate payments
     const paymentData = payments.map((p: {
       lokwasiId: string
@@ -78,12 +107,12 @@ export async function POST(request: NextRequest) {
       const dailyRate = grossSalary / 14
       const leaveCashoutAmount = Math.round(dailyRate * leaveCashoutDays * 100) / 100
 
-      // Calculate TDS (only on salary + leave cashout, not on debt payout)
-      const taxableAmount = grossSalary + leaveCashoutAmount
+      // Calculate TDS (applies to all payments: salary, leave cashout, and debt payout)
+      const taxableAmount = grossSalary + leaveCashoutAmount + debtPayoutAmount
       const tdsAmount = Math.ceil(taxableAmount * tdsRate / 100)
 
       // Net amount
-      const netAmount = taxableAmount - tdsAmount + debtPayoutAmount
+      const netAmount = taxableAmount - tdsAmount
 
       // Generate customer reference
       const customerReference = generateCustomerReference(runDateObj, index + 1)
@@ -157,27 +186,40 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Update lokwasi leave balances and debt balances
+      // Update lokwasi leave balances and debt balances atomically
       for (const payment of paymentData) {
         const lokwasi = lokwasis.find((l) => l.id === payment.lokwasiId)!
 
-        // Deduct leave days if cashed out
+        // Build atomic update data
+        const updateData: {
+          leaveBalance?: { decrement: number }
+          salaryDebtBalance?: { decrement: number }
+        } = {}
+
         if (payment.leaveCashoutDays > 0) {
+          updateData.leaveBalance = { decrement: payment.leaveCashoutDays }
+        }
+
+        if (payment.debtPayoutAmount > 0) {
+          updateData.salaryDebtBalance = { decrement: payment.debtPayoutAmount }
+        }
+
+        // Perform single atomic update if there are any balance changes
+        if (Object.keys(updateData).length > 0) {
           await tx.lokwasi.update({
             where: { id: lokwasi.id },
-            data: {
-              leaveBalance: {
-                decrement: payment.leaveCashoutDays,
-              },
-            },
+            data: updateData,
           })
+        }
 
-          // Create leave transaction record
-          const updatedLokwasi = await tx.lokwasi.findUnique({
-            where: { id: lokwasi.id },
-            select: { leaveBalance: true },
-          })
+        // Get updated balances for transaction records
+        const updatedLokwasi = await tx.lokwasi.findUnique({
+          where: { id: lokwasi.id },
+          select: { leaveBalance: true, salaryDebtBalance: true },
+        })
 
+        // Create leave transaction record if applicable
+        if (payment.leaveCashoutDays > 0) {
           await tx.leaveTransaction.create({
             data: {
               lokwasiId: lokwasi.id,
@@ -192,23 +234,8 @@ export async function POST(request: NextRequest) {
           })
         }
 
-        // Deduct debt if paid out
+        // Create debt payment record if applicable
         if (payment.debtPayoutAmount > 0) {
-          await tx.lokwasi.update({
-            where: { id: lokwasi.id },
-            data: {
-              salaryDebtBalance: {
-                decrement: payment.debtPayoutAmount,
-              },
-            },
-          })
-
-          // Create debt payment record
-          const updatedLokwasi = await tx.lokwasi.findUnique({
-            where: { id: lokwasi.id },
-            select: { salaryDebtBalance: true },
-          })
-
           await tx.debtPayment.create({
             data: {
               lokwasiId: lokwasi.id,
