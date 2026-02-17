@@ -46,8 +46,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get active payroll schedule for cycle days
+    const schedule = await prisma.payrollSchedule.findFirst({
+      where: { isActive: true },
+      select: { cycleDays: true },
+    })
+
+    if (!schedule) {
+      return NextResponse.json(
+        { error: 'No active payroll schedule found' },
+        { status: 400 }
+      )
+    }
+
+    const cycleDays = schedule.cycleDays
     const runDateObj = new Date(runDate)
-    const { start: payPeriodStart, end: payPeriodEnd } = getPayPeriod(runDateObj)
+    const { start: payPeriodStart, end: payPeriodEnd } = getPayPeriod(runDateObj, cycleDays)
 
     // Get all lokwasis for the payments
     const lokwasiIds = payments.map((p: { lokwasiId: string }) => p.lokwasiId)
@@ -103,8 +117,8 @@ export async function POST(request: NextRequest) {
       const leaveCashoutDays = p.leaveCashoutDays || 0
       const debtPayoutAmount = p.debtPayoutAmount || 0
 
-      // Calculate leave cashout
-      const dailyRate = grossSalary / 14
+      // Calculate leave cashout (using cycle days from schedule)
+      const dailyRate = grossSalary / cycleDays
       const leaveCashoutAmount = Math.round(dailyRate * leaveCashoutDays * 100) / 100
 
       // Calculate TDS (applies to all payments: salary, leave cashout, and debt payout)
