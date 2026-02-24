@@ -245,7 +245,7 @@ export default async function DashboardPage() {
               </div>
             </Link>
 
-            <GeneratePayrollsButton />
+            <GeneratePayrollsButton autoGenerate={data.overduePayrolls.length > 0} />
           </CardContent>
         </Card>
 

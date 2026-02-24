@@ -1,34 +1,35 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/rbac'
 
 /**
- * POST /api/payroll/generate
- * Generates pending payroll runs for any overdue pay periods
- * Based on the payroll schedule and current date
+ * GET /api/cron/generate-payroll
+ * Automatically generates pending payroll runs for any overdue pay periods.
+ * Protected by CRON_SECRET environment variable (used by Vercel Cron).
  */
-export async function POST() {
-  const session = await auth()
-  const rbacError = requireAdmin(session)
-  if (rbacError) return rbacError
+export async function GET(request: NextRequest) {
+  // Verify cron secret
+  const authHeader = request.headers.get('authorization')
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
-    // Get the active payroll schedule
     const schedule = await prisma.payrollSchedule.findFirst({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' },
     })
 
     if (!schedule) {
-      return NextResponse.json(
-        { error: 'No active payroll schedule found' },
-        { status: 400 }
-      )
+      return NextResponse.json({ message: 'No active payroll schedule', generated: 0 })
     }
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+
+    // Check if there are any overdue payrolls
+    if (new Date(schedule.nextPayrollDate) > today) {
+      return NextResponse.json({ message: 'No overdue payrolls', generated: 0 })
+    }
 
     // Get existing payroll runs to avoid duplicates
     const existingRuns = await prisma.payrollRun.findMany({
@@ -38,16 +39,13 @@ export async function POST() {
       existingRuns.map((r) => r.runDate.toISOString().split('T')[0])
     )
 
-    // Get all lokwasis (including recently terminated - they may still be eligible for earlier periods)
+    // Get all lokwasis (including recently terminated)
     const allLokwasis = await prisma.lokwasi.findMany({
       where: { status: { in: ['ACTIVE', 'TERMINATED'] } },
     })
 
     if (allLokwasis.length === 0) {
-      return NextResponse.json(
-        { error: 'No employees found' },
-        { status: 400 }
-      )
+      return NextResponse.json({ message: 'No employees found', generated: 0 })
     }
 
     // Calculate pending pay periods
@@ -67,24 +65,18 @@ export async function POST() {
         })
       }
 
-      // Move to next pay period
       currentDate.setDate(currentDate.getDate() + schedule.cycleDays)
     }
 
     if (pendingPayrolls.length === 0) {
-      return NextResponse.json({
-        message: 'No pending payrolls to generate',
-        generated: 0,
-      })
+      return NextResponse.json({ message: 'No pending payrolls to generate', generated: 0 })
     }
 
     // Generate payroll runs
     const createdRuns = []
 
     for (const payroll of pendingPayrolls) {
-      // Filter lokwasis eligible for this pay period:
-      // 1. Must have joined by the run date
-      // 2. Must be ACTIVE, or if TERMINATED, must have been terminated AFTER the period started
+      // Filter lokwasis eligible for this pay period
       const eligibleLokwasis = allLokwasis.filter((l) => {
         if (new Date(l.joinedDate) > payroll.runDate) return false
         if (l.status === 'ACTIVE') return true
@@ -96,7 +88,6 @@ export async function POST() {
 
       if (eligibleLokwasis.length === 0) continue
 
-      // Calculate payments
       let totalGross = 0
       let totalTds = 0
       let totalNet = 0
@@ -111,7 +102,6 @@ export async function POST() {
         totalTds += tds
         totalNet += net
 
-        // Generate customer reference
         const yyyy = payroll.runDate.getFullYear()
         const mm = String(payroll.runDate.getMonth() + 1).padStart(2, '0')
         const dd = String(payroll.runDate.getDate()).padStart(2, '0')
@@ -136,7 +126,6 @@ export async function POST() {
         }
       })
 
-      // Create the payroll run
       const run = await prisma.payrollRun.create({
         data: {
           runDate: payroll.runDate,
@@ -149,7 +138,6 @@ export async function POST() {
           totalDebtPayout: 0,
           totalLeaveCashout: 0,
           employeeCount: paymentRecords.length,
-          createdById: session!.user.id,
           payments: {
             create: paymentRecords,
           },
@@ -163,10 +151,8 @@ export async function POST() {
         totalNet: Number(run.totalNet),
       })
 
-      // Create audit log
       await prisma.auditLog.create({
         data: {
-          userId: session!.user.id,
           action: 'AUTO_GENERATE_PAYROLL',
           entityType: 'payroll_run',
           entityId: run.id,
@@ -174,6 +160,7 @@ export async function POST() {
             runDate: run.runDate,
             employeeCount: run.employeeCount,
             totalNet: Number(run.totalNet),
+            source: 'cron',
           },
         },
       })
@@ -199,7 +186,7 @@ export async function POST() {
       payrollRuns: createdRuns,
     })
   } catch (error) {
-    console.error('Error generating payrolls:', error)
+    console.error('Cron: Error generating payrolls:', error)
     return NextResponse.json(
       { error: 'Failed to generate payrolls' },
       { status: 500 }

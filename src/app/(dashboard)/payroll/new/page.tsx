@@ -26,6 +26,9 @@ interface Lokwasi {
   accountBalance: number
   isAxisBank: boolean
   bankName: string
+  status: string
+  terminatedDate: string | null
+  joinedDate: string
 }
 
 interface PaymentCalculation {
@@ -60,18 +63,41 @@ export default function NewPayrollPage() {
     fetchLokwasis()
   }, [])
 
+  // Filter lokwasis eligible for a given run date
+  // Includes ACTIVE lokwasis and TERMINATED lokwasis whose termination date is after the pay period start
+  const getEligibleLokwasis = (allLokwasis: Lokwasi[], selectedRunDate: string) => {
+    const runDateObj = new Date(selectedRunDate)
+    // Pay period start = runDate - 14 days (default cycle)
+    const periodStart = new Date(runDateObj)
+    periodStart.setDate(periodStart.getDate() - 14)
+
+    return allLokwasis.filter((l) => {
+      // Must have joined by the run date
+      if (new Date(l.joinedDate) > runDateObj) return false
+      if (l.status === 'ACTIVE') return true
+      if (l.status === 'TERMINATED' && l.terminatedDate) {
+        return new Date(l.terminatedDate) > periodStart
+      }
+      return false
+    })
+  }
+
   const fetchLokwasis = async () => {
     try {
       const response = await fetch('/api/lokwasis')
       if (!response.ok) throw new Error('Failed to fetch lokwasis')
       const data = await response.json()
-      const activeLokwasis = data.lokwasis.filter(
-        (l: Lokwasi & { status: string }) => l.status === 'ACTIVE'
+      // Store all lokwasis (ACTIVE + TERMINATED) for filtering by date
+      const allLokwasis = data.lokwasis.filter(
+        (l: Lokwasi) => l.status === 'ACTIVE' || l.status === 'TERMINATED'
       )
-      setLokwasis(activeLokwasis)
+      setLokwasis(allLokwasis)
+
+      // Filter eligible lokwasis based on selected run date
+      const eligible = getEligibleLokwasis(allLokwasis, runDate)
 
       // Initialize payments with calculations
-      const initialPayments = activeLokwasis.map((l: Lokwasi) => {
+      const initialPayments = eligible.map((l: Lokwasi) => {
         const gross = Number(l.grossSalary)
         const tds = Math.ceil(gross * Number(l.tdsRate) / 100)
         const netBeforeRecovery = gross - tds
@@ -102,6 +128,43 @@ export default function NewPayrollPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Re-filter lokwasis when run date changes
+  const handleRunDateChange = (newDate: string) => {
+    setRunDate(newDate)
+    if (lokwasis.length === 0) return
+
+    const eligible = getEligibleLokwasis(lokwasis, newDate)
+    const newPayments = eligible.map((l: Lokwasi) => {
+      // Preserve existing payment data if lokwasi was already in the list
+      const existing = payments.find((p) => p.lokwasiId === l.id)
+      if (existing) return existing
+
+      const gross = Number(l.grossSalary)
+      const tds = Math.ceil(gross * Number(l.tdsRate) / 100)
+      const netBeforeRecovery = gross - tds
+      const acctBal = Number(l.accountBalance || 0)
+      const recovery = acctBal < 0 ? Math.min(Math.abs(acctBal), netBeforeRecovery) : 0
+      return {
+        lokwasiId: l.id,
+        name: l.name,
+        employeeCode: l.employeeCode,
+        grossSalary: gross,
+        tdsRate: Number(l.tdsRate),
+        leaveCashoutDays: 0,
+        leaveCashoutAmount: 0,
+        debtPayoutAmount: 0,
+        accountDebitAmount: recovery,
+        totalGross: gross,
+        tdsAmount: tds,
+        netAmount: netBeforeRecovery - recovery,
+        isAxisBank: l.isAxisBank,
+        bankName: l.bankName,
+        include: true,
+      }
+    })
+    setPayments(newPayments)
   }
 
   const calculatePayment = (payment: PaymentCalculation, lokwasiList: Lokwasi[]): PaymentCalculation => {
@@ -272,7 +335,7 @@ export default function NewPayrollPage() {
                 <input
                   type="date"
                   value={runDate}
-                  onChange={(e) => setRunDate(e.target.value)}
+                  onChange={(e) => handleRunDateChange(e.target.value)}
                   className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
                 />
                 <p className="mt-2 text-sm text-[var(--muted-foreground)]">
@@ -371,6 +434,11 @@ export default function NewPayrollPage() {
                           <td className="px-4 py-4">
                             <p className="font-medium text-[var(--foreground)]">
                               {payment.name}
+                              {lokwasi?.status === 'TERMINATED' && (
+                                <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-[var(--error-light)] text-[var(--error)] font-medium">
+                                  TERMINATED
+                                </span>
+                              )}
                             </p>
                             <p className="text-xs text-[var(--muted-foreground)]">
                               {payment.employeeCode}
