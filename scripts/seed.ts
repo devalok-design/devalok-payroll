@@ -349,6 +349,10 @@ async function main() {
 
   // Delete existing data to start fresh
   console.log('\nClearing existing data...')
+  await prisma.tdsMonthly.deleteMany({})
+  await prisma.leaveTransaction.deleteMany({})
+  await prisma.debtPayment.deleteMany({})
+  await prisma.debtRun.deleteMany({})
   await prisma.payment.deleteMany({})
   await prisma.payrollRun.deleteMany({})
   await prisma.lokwasi.deleteMany({})

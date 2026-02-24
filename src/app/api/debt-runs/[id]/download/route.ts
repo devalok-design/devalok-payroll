@@ -8,14 +8,14 @@ import { getDebitAccount } from '@/lib/settings'
 // GET /api/debt-runs/[id]/download?type=axis|neft
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id } = await params
+  const { id } = params
   const searchParams = request.nextUrl.searchParams
   const type = searchParams.get('type') || 'axis'
 

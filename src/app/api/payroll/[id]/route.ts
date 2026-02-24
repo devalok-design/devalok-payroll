@@ -7,13 +7,13 @@ import { requireViewer, requireAdmin } from '@/lib/rbac'
 // GET /api/payroll/[id] - Get a single payroll run with payments
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await auth()
   const rbacError = requireViewer(session)
   if (rbacError) return rbacError
 
-  const { id } = await params
+  const { id } = params
 
   try {
     const payrollRun = await prisma.payrollRun.findUnique({
@@ -74,13 +74,13 @@ export async function GET(
 // PATCH /api/payroll/[id] - Update payroll run status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await auth()
   const rbacError = requireAdmin(session)
   if (rbacError) return rbacError
 
-  const { id } = await params
+  const { id } = params
 
   try {
     const body = await request.json()

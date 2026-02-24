@@ -7,14 +7,14 @@ import { z } from 'zod'
 // GET /api/lokwasis/[id] - Get a single lokwasi with payment history
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id } = await params
+  const { id } = params
 
   try {
     const lokwasi = await prisma.lokwasi.findUnique({
@@ -106,14 +106,14 @@ export async function GET(
 // PUT /api/lokwasis/[id] - Update a lokwasi
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id } = await params
+  const { id } = params
 
   try {
     const body = await request.json()
@@ -200,14 +200,14 @@ export async function PUT(
 // DELETE /api/lokwasis/[id] - Delete a lokwasi (soft delete by setting status to TERMINATED)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id } = await params
+  const { id } = params
 
   try {
     const lokwasi = await prisma.lokwasi.findUnique({

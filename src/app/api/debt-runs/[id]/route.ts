@@ -6,14 +6,14 @@ import { DebtRunStatus } from '@prisma/client'
 // GET /api/debt-runs/[id] - Get a single debt run with payments
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id } = await params
+  const { id } = params
 
   try {
     const debtRun = await prisma.debtRun.findUnique({
@@ -78,14 +78,14 @@ export async function GET(
 // PATCH /api/debt-runs/[id] - Update debt run status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id } = await params
+  const { id } = params
 
   try {
     const body = await request.json()

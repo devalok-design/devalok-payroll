@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
@@ -59,9 +59,9 @@ interface PayrollRun {
 export default function PayrollDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }) {
-  const { id } = use(params)
+  const { id } = params
   const router = useRouter()
   const [payroll, setPayroll] = useState<PayrollRun | null>(null)
   const [isLoading, setIsLoading] = useState(true)

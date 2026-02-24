@@ -6,14 +6,14 @@ import { generateTDSReportExcel } from '@/lib/excel/tds-report'
 // GET /api/tds/[year]/[month]/download - Download TDS report Excel
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ year: string; month: string }> }
+  { params }: { params: { year: string; month: string } }
 ) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { year, month } = await params
+  const { year, month } = params
   const yearNum = parseInt(year)
   const monthNum = parseInt(month)
 

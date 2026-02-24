@@ -6,14 +6,14 @@ import { TdsFilingStatus } from '@prisma/client'
 // GET /api/tds/[year]/[month] - Get TDS data for a specific month
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ year: string; month: string }> }
+  { params }: { params: { year: string; month: string } }
 ) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { year, month } = await params
+  const { year, month } = params
   const yearNum = parseInt(year)
   const monthNum = parseInt(month)
 
@@ -87,14 +87,14 @@ export async function GET(
 // PATCH /api/tds/[year]/[month] - Update all TDS records for a month
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ year: string; month: string }> }
+  { params }: { params: { year: string; month: string } }
 ) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { year, month } = await params
+  const { year, month } = params
   const yearNum = parseInt(year)
   const monthNum = parseInt(month)
 

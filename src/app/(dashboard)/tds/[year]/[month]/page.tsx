@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
@@ -49,9 +49,9 @@ interface MonthlyTdsData {
 export default function TdsMonthDetailPage({
   params,
 }: {
-  params: Promise<{ year: string; month: string }>
+  params: { year: string; month: string }
 }) {
-  const { year, month } = use(params)
+  const { year, month } = params
   const router = useRouter()
   const [data, setData] = useState<MonthlyTdsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
