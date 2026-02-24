@@ -259,7 +259,7 @@ export default function NewPayrollPage() {
   if (isLoading) {
     return (
       <>
-        <Header title="New Payroll Run" />
+        <Header title="Off-Cycle Payroll" />
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" />
         </main>
@@ -269,7 +269,7 @@ export default function NewPayrollPage() {
 
   return (
     <>
-      <Header title="New Payroll Run" />
+      <Header title="Off-Cycle Payroll" />
 
       <main className="flex-1 overflow-y-auto p-6">
         {/* Back link */}
@@ -280,6 +280,11 @@ export default function NewPayrollPage() {
           <ArrowLeft className="w-4 h-4" />
           Back to Payroll
         </Link>
+
+        {/* Info note */}
+        <div className="mb-6 p-4 bg-[var(--info-light)] border border-[var(--info)] text-sm text-[var(--neutral-700)]">
+          Use this for off-schedule payrolls. Routine payrolls are auto-generated every 14 days and can be reviewed from the <Link href="/payroll" className="underline text-[var(--primary)]">payroll list</Link>.
+        </div>
 
         {/* Progress Steps */}
         <div className="flex items-center gap-4 mb-8">

@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { PayrollStatus } from '@prisma/client'
 import { requireViewer, requireAdmin } from '@/lib/rbac'
+import { createAccountTransaction } from '@/lib/account/transactions'
 
 // GET /api/payroll/[id] - Get a single payroll run with payments
 export async function GET(
@@ -28,6 +29,9 @@ export async function GET(
                 employeeCode: true,
                 bankName: true,
                 isAxisBank: true,
+                leaveBalance: true,
+                salaryDebtBalance: true,
+                accountBalance: true,
               },
             },
           },
@@ -41,6 +45,12 @@ export async function GET(
       return NextResponse.json({ error: 'Payroll run not found' }, { status: 404 })
     }
 
+    // Get cycleDays from active schedule
+    const schedule = await prisma.payrollSchedule.findFirst({
+      where: { isActive: true },
+      select: { cycleDays: true },
+    })
+
     // Transform Decimal to number for JSON
     const transformedRun = {
       ...payrollRun,
@@ -49,6 +59,7 @@ export async function GET(
       totalNet: Number(payrollRun.totalNet),
       totalDebtPayout: Number(payrollRun.totalDebtPayout),
       totalLeaveCashout: Number(payrollRun.totalLeaveCashout),
+      cycleDays: schedule?.cycleDays || 14,
       payments: payrollRun.payments.map((p) => ({
         ...p,
         grossAmount: Number(p.grossAmount),
@@ -59,6 +70,12 @@ export async function GET(
         debtPayoutAmount: Number(p.debtPayoutAmount),
         accountDebitAmount: Number(p.accountDebitAmount),
         netAmount: Number(p.netAmount),
+        lokwasi: {
+          ...p.lokwasi,
+          leaveBalance: Number(p.lokwasi.leaveBalance),
+          salaryDebtBalance: Number(p.lokwasi.salaryDebtBalance),
+          accountBalance: Number(p.lokwasi.accountBalance),
+        },
       })),
     }
 
@@ -295,6 +312,121 @@ export async function PATCH(
                 filingStatus: 'PENDING',
               },
             })
+          }
+        }
+
+        // Deferred balance updates: handle leave/debt/account transactions
+        // For auto-generated payrolls (or payrolls edited via inline PATCH), these records
+        // may not exist yet. Check and create them idempotently.
+        const runDateObj = new Date(run.runDate)
+
+        for (const payment of payments) {
+          const leaveCashoutDays = Number(payment.leaveCashoutDays)
+          const leaveCashoutAmount = Number(payment.leaveCashoutAmount)
+          const debtPayoutAmount = Number(payment.debtPayoutAmount)
+          const accountDebitAmount = Number(payment.accountDebitAmount)
+          const grossAmount = Number(payment.grossAmount)
+
+          // Handle leave cashout balance updates
+          if (leaveCashoutDays > 0) {
+            const existingLeaveTx = await tx.leaveTransaction.findFirst({
+              where: { paymentId: payment.id },
+            })
+            if (!existingLeaveTx) {
+              await tx.lokwasi.update({
+                where: { id: payment.lokwasiId },
+                data: { leaveBalance: { decrement: leaveCashoutDays } },
+              })
+              const updatedLokwasi = await tx.lokwasi.findUnique({
+                where: { id: payment.lokwasiId },
+                select: { leaveBalance: true },
+              })
+              await tx.leaveTransaction.create({
+                data: {
+                  lokwasiId: payment.lokwasiId,
+                  transactionType: 'CASHOUT',
+                  days: -leaveCashoutDays,
+                  balanceAfter: updatedLokwasi!.leaveBalance,
+                  paymentId: payment.id,
+                  transactionDate: runDateObj,
+                  createdById: session!.user.id,
+                  notes: `Leave cashout for payroll ${id}`,
+                },
+              })
+            }
+          }
+
+          // Handle debt payout balance updates
+          if (debtPayoutAmount > 0) {
+            const existingDebtPmt = await tx.debtPayment.findFirst({
+              where: { paymentId: payment.id },
+            })
+            if (!existingDebtPmt) {
+              await tx.lokwasi.update({
+                where: { id: payment.lokwasiId },
+                data: { salaryDebtBalance: { decrement: debtPayoutAmount } },
+              })
+              const updatedLokwasi = await tx.lokwasi.findUnique({
+                where: { id: payment.lokwasiId },
+                select: { salaryDebtBalance: true },
+              })
+              await tx.debtPayment.create({
+                data: {
+                  lokwasiId: payment.lokwasiId,
+                  paymentId: payment.id,
+                  amount: debtPayoutAmount,
+                  balanceAfter: updatedLokwasi!.salaryDebtBalance,
+                  paymentDate: runDateObj,
+                  notes: `Debt payout for payroll ${id}`,
+                },
+              })
+            }
+          }
+
+          // Handle account transactions (salary credit, leave cashout, recovery)
+          const existingSalaryTx = await tx.accountTransaction.findFirst({
+            where: { paymentId: payment.id, category: 'REGULAR_SALARY' },
+          })
+          if (!existingSalaryTx) {
+            // Salary credit
+            await createAccountTransaction(tx, {
+              lokwasiId: payment.lokwasiId,
+              type: 'CREDIT',
+              category: 'REGULAR_SALARY',
+              amount: grossAmount,
+              description: `Salary for ${runDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`,
+              paymentId: payment.id,
+              transactionDate: runDateObj,
+              createdById: session!.user.id,
+            })
+
+            // Leave cashout credit
+            if (leaveCashoutAmount > 0) {
+              await createAccountTransaction(tx, {
+                lokwasiId: payment.lokwasiId,
+                type: 'CREDIT',
+                category: 'LEAVE_CASHOUT',
+                amount: leaveCashoutAmount,
+                description: `Leave cashout (${leaveCashoutDays} days)`,
+                paymentId: payment.id,
+                transactionDate: runDateObj,
+                createdById: session!.user.id,
+              })
+            }
+
+            // Account recovery debit
+            if (accountDebitAmount > 0) {
+              await createAccountTransaction(tx, {
+                lokwasiId: payment.lokwasiId,
+                type: 'DEBIT',
+                category: 'ADVANCE_RECOVERY',
+                amount: accountDebitAmount,
+                description: `Advance recovery from payroll`,
+                paymentId: payment.id,
+                transactionDate: runDateObj,
+                createdById: session!.user.id,
+              })
+            }
           }
         }
       }

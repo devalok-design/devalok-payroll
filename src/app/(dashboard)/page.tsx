@@ -102,7 +102,7 @@ export default async function DashboardPage() {
                 `${data.overduePayrolls.length} payroll cycle(s) need to be generated`}
             </span>
             <Button asChild size="sm" variant={isOverdue ? 'destructive' : 'default'}>
-              <Link href="/payroll/new">Process Now</Link>
+              <Link href={data.pendingPayrolls.length > 0 ? `/payroll/${data.pendingPayrolls[0].id}` : '/payroll'}>Process Now</Link>
             </Button>
           </AlertDescription>
         </Alert>
@@ -187,8 +187,8 @@ export default async function DashboardPage() {
             <p className="text-xs text-muted-foreground">to process</p>
             {data.pendingPayrolls.length > 0 && (
               <Button variant="link" asChild className="mt-2 h-auto p-0 text-xs">
-                <Link href="/payroll/new">
-                  Process now <ArrowRight className="ml-1 h-3 w-3" />
+                <Link href="/payroll">
+                  View all <ArrowRight className="ml-1 h-3 w-3" />
                 </Link>
               </Button>
             )}
@@ -212,9 +212,9 @@ export default async function DashboardPage() {
                 <Download className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
-                <p className="font-medium">Run Payroll</p>
+                <p className="font-medium">Off-Cycle Payroll</p>
                 <p className="text-sm text-muted-foreground">
-                  Generate and download payment Excel
+                  Create a custom off-schedule payroll run
                 </p>
               </div>
             </Link>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
@@ -15,7 +15,10 @@ import {
   XCircle,
   AlertTriangle,
   RefreshCw,
+  Save,
+  Info,
 } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface Payment {
   id: string
@@ -25,6 +28,9 @@ interface Payment {
     employeeCode: string
     bankName: string
     isAxisBank: boolean
+    leaveBalance: number
+    salaryDebtBalance: number
+    accountBalance: number
   }
   grossAmount: number
   tdsRate: number
@@ -50,11 +56,17 @@ interface PayrollRun {
   totalDebtPayout: number
   totalLeaveCashout: number
   employeeCount: number
+  cycleDays: number
   notes: string | null
   createdAt: string
   processedAt: string | null
   paidAt: string | null
   payments: Payment[]
+}
+
+interface EditableValues {
+  leaveCashoutDays: number
+  debtPayoutAmount: number
 }
 
 export default function PayrollDetailPage({
@@ -69,7 +81,12 @@ export default function PayrollDetailPage({
   const [isDownloading, setIsDownloading] = useState<string | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isRerunning, setIsRerunning] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
+  const [saveSuccess, setSaveSuccess] = useState(false)
+
+  // Editable payment values (keyed by payment id)
+  const [edits, setEdits] = useState<Record<string, EditableValues>>({})
 
   useEffect(() => {
     fetchPayroll()
@@ -87,6 +104,15 @@ export default function PayrollDetailPage({
       }
       const data = await response.json()
       setPayroll(data.payrollRun)
+      // Initialize edits from server data
+      const initialEdits: Record<string, EditableValues> = {}
+      for (const p of data.payrollRun.payments) {
+        initialEdits[p.id] = {
+          leaveCashoutDays: p.leaveCashoutDays,
+          debtPayoutAmount: p.debtPayoutAmount,
+        }
+      }
+      setEdits(initialEdits)
     } catch (err) {
       console.error('Error fetching payroll:', err)
       setError('Failed to load payroll details')
@@ -95,7 +121,145 @@ export default function PayrollDetailPage({
     }
   }
 
+  // Check if any edits differ from server data
+  const hasUnsavedChanges = useMemo(() => {
+    if (!payroll) return false
+    return payroll.payments.some((p) => {
+      const edit = edits[p.id]
+      if (!edit) return false
+      return (
+        edit.leaveCashoutDays !== p.leaveCashoutDays ||
+        edit.debtPayoutAmount !== p.debtPayoutAmount
+      )
+    })
+  }, [payroll, edits])
+
+  // Recalculate payment values based on edits
+  const getCalculatedPayment = (payment: Payment) => {
+    const edit = edits[payment.id]
+    if (!edit || !payroll) return payment
+
+    const cycleDays = payroll.cycleDays || 14
+    const dailyRate = payment.grossAmount / cycleDays
+    const leaveCashoutAmount = Math.round(dailyRate * edit.leaveCashoutDays * 100) / 100
+    const taxableAmount = payment.grossAmount + leaveCashoutAmount + edit.debtPayoutAmount
+    const tdsAmount = Math.ceil(taxableAmount * payment.tdsRate / 100)
+    const netBeforeRecovery = taxableAmount - tdsAmount
+
+    const accountBalance = payment.lokwasi.accountBalance
+    let accountDebitAmount = 0
+    if (accountBalance < 0) {
+      const amountOwed = Math.abs(accountBalance)
+      accountDebitAmount = Math.min(amountOwed, netBeforeRecovery)
+    }
+
+    const netAmount = netBeforeRecovery - accountDebitAmount
+
+    return {
+      ...payment,
+      leaveCashoutDays: edit.leaveCashoutDays,
+      leaveCashoutAmount,
+      debtPayoutAmount: edit.debtPayoutAmount,
+      tdsAmount,
+      accountDebitAmount,
+      netAmount,
+    }
+  }
+
+  // Calculate totals from edits
+  const calculatedTotals = useMemo(() => {
+    if (!payroll) return { totalGross: 0, totalTds: 0, totalNet: 0, totalDebtPayout: 0, totalLeaveCashout: 0 }
+    return payroll.payments.reduce(
+      (acc, p) => {
+        const calc = getCalculatedPayment(p)
+        return {
+          totalGross: acc.totalGross + calc.grossAmount + calc.leaveCashoutAmount,
+          totalTds: acc.totalTds + calc.tdsAmount,
+          totalNet: acc.totalNet + calc.netAmount,
+          totalDebtPayout: acc.totalDebtPayout + calc.debtPayoutAmount,
+          totalLeaveCashout: acc.totalLeaveCashout + calc.leaveCashoutAmount,
+        }
+      },
+      { totalGross: 0, totalTds: 0, totalNet: 0, totalDebtPayout: 0, totalLeaveCashout: 0 }
+    )
+  }, [payroll, edits])
+
+  const isPending = payroll?.status === 'PENDING'
+
+  // Use calculated totals for PENDING payrolls (reactive), server totals otherwise
+  const displayTotals = isPending ? calculatedTotals : {
+    totalGross: payroll?.totalGross || 0,
+    totalTds: payroll?.totalTds || 0,
+    totalNet: payroll?.totalNet || 0,
+    totalDebtPayout: payroll?.totalDebtPayout || 0,
+    totalLeaveCashout: payroll?.totalLeaveCashout || 0,
+  }
+
+  const updateEdit = (paymentId: string, field: keyof EditableValues, value: number) => {
+    setSaveSuccess(false)
+    setEdits((prev) => ({
+      ...prev,
+      [paymentId]: { ...prev[paymentId], [field]: value },
+    }))
+  }
+
+  const handleSaveChanges = async () => {
+    if (!payroll || !hasUnsavedChanges) return
+
+    setIsSaving(true)
+    setError('')
+    setSaveSuccess(false)
+
+    try {
+      // Only send payments that changed
+      const changedPayments = payroll.payments
+        .filter((p) => {
+          const edit = edits[p.id]
+          return edit && (edit.leaveCashoutDays !== p.leaveCashoutDays || edit.debtPayoutAmount !== p.debtPayoutAmount)
+        })
+        .map((p) => ({
+          paymentId: p.id,
+          leaveCashoutDays: edits[p.id].leaveCashoutDays,
+          debtPayoutAmount: edits[p.id].debtPayoutAmount,
+        }))
+
+      const response = await fetch(`/api/payroll/${id}/payments`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payments: changedPayments }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save changes')
+      }
+
+      const data = await response.json()
+      setPayroll(data.payrollRun)
+      // Re-initialize edits from saved data
+      const newEdits: Record<string, EditableValues> = {}
+      for (const p of data.payrollRun.payments) {
+        newEdits[p.id] = {
+          leaveCashoutDays: p.leaveCashoutDays,
+          debtPayoutAmount: p.debtPayoutAmount,
+        }
+      }
+      setEdits(newEdits)
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save changes')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const handleDownload = async (type: 'axis' | 'neft') => {
+    // Auto-save pending changes before download
+    if (hasUnsavedChanges) {
+      await handleSaveChanges()
+    }
+
     setIsDownloading(type)
     try {
       const response = await fetch(`/api/payroll/${id}/download?type=${type}`)
@@ -160,7 +324,6 @@ export default function PayrollDetailPage({
         throw new Error(data.error || 'Failed to re-run payroll')
       }
       const data = await response.json()
-      // Redirect to the new payroll run
       router.push(`/payroll/${data.payrollRun.id}`)
     } catch (err) {
       console.error('Re-run error:', err)
@@ -226,6 +389,23 @@ export default function PayrollDetailPage({
           </div>
         )}
 
+        {saveSuccess && (
+          <Alert className="mb-6 border-[var(--success)]">
+            <CheckCircle className="h-4 w-4 text-[var(--success)]" />
+            <AlertDescription className="text-[var(--success)]">Changes saved successfully</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Info banner for PENDING payrolls */}
+        {isPending && (
+          <Alert className="mb-6">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Review the payments below. Adjust leave cashout or debt payout if needed, then download the Excel to process.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Status & Actions */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -264,6 +444,20 @@ export default function PayrollDetailPage({
           </div>
 
           <div className="flex items-center gap-3">
+            {isPending && hasUnsavedChanges && (
+              <button
+                onClick={handleSaveChanges}
+                disabled={isSaving}
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white font-medium text-sm hover:bg-[var(--devalok-700)] disabled:opacity-50 transition-colors"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                Save Changes
+              </button>
+            )}
             {payroll.status === 'PROCESSED' && (
               <button
                 onClick={() => updateStatus('PAID')}
@@ -324,7 +518,7 @@ export default function PayrollDetailPage({
               Total Gross
             </p>
             <p className="text-2xl font-semibold text-[var(--foreground)]">
-              {formatCurrency(payroll.totalGross)}
+              {formatCurrency(displayTotals.totalGross)}
             </p>
           </div>
           <div className="bg-white p-4 border border-[var(--border)]">
@@ -332,7 +526,7 @@ export default function PayrollDetailPage({
               Leave Cashout
             </p>
             <p className="text-2xl font-semibold text-[var(--success)]">
-              {formatCurrency(payroll.totalLeaveCashout)}
+              {formatCurrency(displayTotals.totalLeaveCashout)}
             </p>
           </div>
           <div className="bg-white p-4 border border-[var(--border)]">
@@ -340,7 +534,7 @@ export default function PayrollDetailPage({
               Debt Payout
             </p>
             <p className="text-2xl font-semibold text-[var(--warning)]">
-              {formatCurrency(payroll.totalDebtPayout)}
+              {formatCurrency(displayTotals.totalDebtPayout)}
             </p>
           </div>
           <div className="bg-white p-4 border border-[var(--border)]">
@@ -348,7 +542,7 @@ export default function PayrollDetailPage({
               Total TDS
             </p>
             <p className="text-2xl font-semibold text-[var(--muted-foreground)]">
-              {formatCurrency(payroll.totalTds)}
+              {formatCurrency(displayTotals.totalTds)}
             </p>
           </div>
           <div className="bg-white p-4 border border-[var(--border)] border-[var(--primary)]">
@@ -356,7 +550,7 @@ export default function PayrollDetailPage({
               Net Payout
             </p>
             <p className="text-2xl font-semibold text-[var(--primary)]">
-              {formatCurrency(payroll.totalNet)}
+              {formatCurrency(displayTotals.totalNet)}
             </p>
           </div>
         </div>
@@ -440,11 +634,11 @@ export default function PayrollDetailPage({
                   <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
                     Gross
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Leave
+                  <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                    Leave Cashout
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Debt
+                  <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                    Debt Payout
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
                     Recovery
@@ -464,88 +658,150 @@ export default function PayrollDetailPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]">
-                {payroll.payments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-[var(--muted)] transition-colors">
-                    <td className="px-4 py-4">
-                      <Link
-                        href={`/lokwasis/${payment.lokwasi.id}`}
-                        className="font-medium text-[var(--foreground)] hover:text-[var(--primary)]"
-                      >
-                        {payment.lokwasi.name}
-                      </Link>
-                      <p className="text-xs text-[var(--muted-foreground)]">
-                        {payment.lokwasi.employeeCode}
-                      </p>
-                    </td>
-                    <td className="px-4 py-4 text-sm font-mono text-[var(--muted-foreground)]">
-                      {payment.customerReference}
-                    </td>
-                    <td className="px-4 py-4 text-right text-sm text-[var(--foreground)]">
-                      {formatCurrency(payment.grossAmount)}
-                    </td>
-                    <td className="px-4 py-4 text-right text-sm">
-                      {payment.leaveCashoutAmount > 0 ? (
-                        <span className="text-[var(--success)]">
-                          +{formatCurrency(payment.leaveCashoutAmount)}
-                          <span className="text-xs block text-[var(--muted-foreground)]">
-                            ({payment.leaveCashoutDays} days)
+                {payroll.payments.map((payment) => {
+                  const calc = isPending ? getCalculatedPayment(payment) : payment
+                  const edit = edits[payment.id]
+                  return (
+                    <tr key={payment.id} className="hover:bg-[var(--muted)] transition-colors">
+                      <td className="px-4 py-4">
+                        <Link
+                          href={`/lokwasis/${payment.lokwasi.id}`}
+                          className="font-medium text-[var(--foreground)] hover:text-[var(--primary)]"
+                        >
+                          {payment.lokwasi.name}
+                        </Link>
+                        <p className="text-xs text-[var(--muted-foreground)]">
+                          {payment.lokwasi.employeeCode}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4 text-sm font-mono text-[var(--muted-foreground)]">
+                        {payment.customerReference}
+                      </td>
+                      <td className="px-4 py-4 text-right text-sm text-[var(--foreground)]">
+                        {formatCurrency(payment.grossAmount)}
+                      </td>
+
+                      {/* Leave Cashout - editable when PENDING */}
+                      <td className="px-4 py-4">
+                        {isPending ? (
+                          <div>
+                            <div className="flex items-center justify-center gap-2">
+                              <input
+                                type="number"
+                                min="0"
+                                max={payment.lokwasi.leaveBalance}
+                                step="0.5"
+                                value={edit?.leaveCashoutDays ?? 0}
+                                onChange={(e) =>
+                                  updateEdit(payment.id, 'leaveCashoutDays', parseFloat(e.target.value) || 0)
+                                }
+                                className="w-16 px-2 py-1 border border-[var(--border)] text-center text-sm focus:outline-none focus:border-[var(--primary)]"
+                              />
+                              <span className="text-xs text-[var(--muted-foreground)]">
+                                / {payment.lokwasi.leaveBalance}
+                              </span>
+                            </div>
+                            {calc.leaveCashoutAmount > 0 && (
+                              <p className="text-xs text-center text-[var(--success)] mt-1">
+                                +{formatCurrency(calc.leaveCashoutAmount)}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-right text-sm">
+                            {payment.leaveCashoutAmount > 0 ? (
+                              <span className="text-[var(--success)]">
+                                +{formatCurrency(payment.leaveCashoutAmount)}
+                                <span className="text-xs block text-[var(--muted-foreground)]">
+                                  ({payment.leaveCashoutDays} days)
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-[var(--muted-foreground)]">-</span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Debt Payout - editable when PENDING */}
+                      <td className="px-4 py-4">
+                        {isPending ? (
+                          <div>
+                            <div className="flex items-center justify-center gap-2">
+                              <input
+                                type="number"
+                                min="0"
+                                max={payment.lokwasi.salaryDebtBalance}
+                                step="100"
+                                value={edit?.debtPayoutAmount ?? 0}
+                                onChange={(e) =>
+                                  updateEdit(payment.id, 'debtPayoutAmount', parseFloat(e.target.value) || 0)
+                                }
+                                className="w-24 px-2 py-1 border border-[var(--border)] text-center text-sm focus:outline-none focus:border-[var(--primary)]"
+                              />
+                            </div>
+                            {payment.lokwasi.salaryDebtBalance > 0 && (
+                              <p className="text-xs text-center text-[var(--warning)] mt-1">
+                                {formatCurrency(payment.lokwasi.salaryDebtBalance)} owed
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-right text-sm">
+                            {payment.debtPayoutAmount > 0 ? (
+                              <span className="text-[var(--warning)]">
+                                +{formatCurrency(payment.debtPayoutAmount)}
+                              </span>
+                            ) : (
+                              <span className="text-[var(--muted-foreground)]">-</span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-4 text-right text-sm">
+                        {calc.accountDebitAmount > 0 ? (
+                          <span className="text-[var(--error)]">
+                            -{formatCurrency(calc.accountDebitAmount)}
                           </span>
+                        ) : (
+                          <span className="text-[var(--muted-foreground)]">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-right text-sm text-[var(--muted-foreground)]">
+                        {formatCurrency(calc.tdsAmount)}
+                        <span className="text-xs block">({payment.tdsRate}%)</span>
+                      </td>
+                      <td className="px-4 py-4 text-right font-semibold text-[var(--foreground)]">
+                        {formatCurrency(calc.netAmount)}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        {payment.lokwasi.isAxisBank ? (
+                          <span className="text-xs px-1.5 py-0.5 bg-[var(--info)] text-white">
+                            AXIS
+                          </span>
+                        ) : (
+                          <span className="text-xs text-[var(--muted-foreground)]">
+                            {payment.lokwasi.bankName}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span
+                          className={`text-xs px-2 py-0.5 ${
+                            payment.paymentStatus === 'PAID'
+                              ? 'bg-[var(--success-light)] text-[var(--success)]'
+                              : payment.paymentStatus === 'FAILED'
+                              ? 'bg-[var(--error-light)] text-[var(--error)]'
+                              : 'bg-[var(--warning-light)] text-[var(--warning)]'
+                          }`}
+                        >
+                          {payment.paymentStatus}
                         </span>
-                      ) : (
-                        <span className="text-[var(--muted-foreground)]">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-right text-sm">
-                      {payment.debtPayoutAmount > 0 ? (
-                        <span className="text-[var(--warning)]">
-                          +{formatCurrency(payment.debtPayoutAmount)}
-                        </span>
-                      ) : (
-                        <span className="text-[var(--muted-foreground)]">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-right text-sm">
-                      {payment.accountDebitAmount > 0 ? (
-                        <span className="text-[var(--error)]">
-                          -{formatCurrency(payment.accountDebitAmount)}
-                        </span>
-                      ) : (
-                        <span className="text-[var(--muted-foreground)]">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-right text-sm text-[var(--muted-foreground)]">
-                      {formatCurrency(payment.tdsAmount)}
-                      <span className="text-xs block">({payment.tdsRate}%)</span>
-                    </td>
-                    <td className="px-4 py-4 text-right font-semibold text-[var(--foreground)]">
-                      {formatCurrency(payment.netAmount)}
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      {payment.lokwasi.isAxisBank ? (
-                        <span className="text-xs px-1.5 py-0.5 bg-[var(--info)] text-white">
-                          AXIS
-                        </span>
-                      ) : (
-                        <span className="text-xs text-[var(--muted-foreground)]">
-                          {payment.lokwasi.bankName}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <span
-                        className={`text-xs px-2 py-0.5 ${
-                          payment.paymentStatus === 'PAID'
-                            ? 'bg-[var(--success-light)] text-[var(--success)]'
-                            : payment.paymentStatus === 'FAILED'
-                            ? 'bg-[var(--error-light)] text-[var(--error)]'
-                            : 'bg-[var(--warning-light)] text-[var(--warning)]'
-                        }`}
-                      >
-                        {payment.paymentStatus}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

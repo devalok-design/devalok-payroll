@@ -93,7 +93,7 @@ export default async function PayrollPage() {
             className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white font-medium text-sm hover:bg-[var(--devalok-700)] transition-colors"
           >
             <Plus className="w-4 h-4" />
-            New Payroll Run
+            Off-Cycle Payroll
           </Link>
         </div>
 
