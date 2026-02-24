@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getPayPeriod, generateCustomerReference } from '@/lib/calculations/payroll'
 import { requireViewer, requireAdmin } from '@/lib/rbac'
+import { createAccountTransaction } from '@/lib/account/transactions'
 
 // GET /api/payroll - List all payroll runs
 export async function GET() {
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
       const lokwasi = lokwasis.find((l) => l.id === p.lokwasiId)!
       const grossSalary = Number(lokwasi.grossSalary)
       const tdsRate = Number(lokwasi.tdsRate)
+      const accountBalance = Number(lokwasi.accountBalance)
       const leaveCashoutDays = p.leaveCashoutDays || 0
       const debtPayoutAmount = p.debtPayoutAmount || 0
 
@@ -124,8 +126,18 @@ export async function POST(request: NextRequest) {
       const taxableAmount = grossSalary + leaveCashoutAmount + debtPayoutAmount
       const tdsAmount = Math.ceil(taxableAmount * tdsRate / 100)
 
-      // Net amount
-      const netAmount = taxableAmount - tdsAmount
+      // Net before account recovery
+      const netBeforeRecovery = taxableAmount - tdsAmount
+
+      // Account recovery: if balance is negative, deduct from net pay (100% recovery)
+      let accountDebitAmount = 0
+      if (accountBalance < 0) {
+        const amountOwed = Math.abs(accountBalance)
+        accountDebitAmount = Math.min(amountOwed, netBeforeRecovery)
+      }
+
+      // Final net amount after recovery
+      const netAmount = netBeforeRecovery - accountDebitAmount
 
       // Generate customer reference
       const customerReference = generateCustomerReference(runDateObj, index + 1)
@@ -138,6 +150,7 @@ export async function POST(request: NextRequest) {
         leaveCashoutDays,
         leaveCashoutAmount,
         debtPayoutAmount,
+        accountDebitAmount,
         netAmount,
         customerReference,
         // Snapshot bank details
@@ -199,9 +212,10 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Update lokwasi leave balances and debt balances atomically
+      // Update lokwasi balances and create transaction records atomically
       for (const payment of paymentData) {
         const lokwasi = lokwasis.find((l) => l.id === payment.lokwasiId)!
+        const paymentRecord = run.payments.find((p) => p.lokwasiId === lokwasi.id)
 
         // Build atomic update data
         const updateData: {
@@ -239,7 +253,7 @@ export async function POST(request: NextRequest) {
               transactionType: 'CASHOUT',
               days: -payment.leaveCashoutDays,
               balanceAfter: updatedLokwasi!.leaveBalance,
-              paymentId: run.payments.find((p) => p.lokwasiId === lokwasi.id)?.id,
+              paymentId: paymentRecord?.id,
               transactionDate: runDateObj,
               createdById: session!.user.id,
               notes: `Leave cashout for payroll ${run.id}`,
@@ -252,12 +266,52 @@ export async function POST(request: NextRequest) {
           await tx.debtPayment.create({
             data: {
               lokwasiId: lokwasi.id,
-              paymentId: run.payments.find((p) => p.lokwasiId === lokwasi.id)?.id,
+              paymentId: paymentRecord?.id,
               amount: payment.debtPayoutAmount,
               balanceAfter: updatedLokwasi!.salaryDebtBalance,
               paymentDate: runDateObj,
               notes: `Debt payout for payroll ${run.id}`,
             },
+          })
+        }
+
+        // Create account transaction for salary credit
+        await createAccountTransaction(tx, {
+          lokwasiId: lokwasi.id,
+          type: 'CREDIT',
+          category: 'REGULAR_SALARY',
+          amount: payment.grossAmount,
+          description: `Salary for ${runDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`,
+          paymentId: paymentRecord?.id,
+          transactionDate: runDateObj,
+          createdById: session!.user.id,
+        })
+
+        // Create account transaction for leave cashout if applicable
+        if (payment.leaveCashoutAmount > 0) {
+          await createAccountTransaction(tx, {
+            lokwasiId: lokwasi.id,
+            type: 'CREDIT',
+            category: 'LEAVE_CASHOUT',
+            amount: payment.leaveCashoutAmount,
+            description: `Leave cashout (${payment.leaveCashoutDays} days)`,
+            paymentId: paymentRecord?.id,
+            transactionDate: runDateObj,
+            createdById: session!.user.id,
+          })
+        }
+
+        // Create account transaction for account recovery if applicable
+        if (payment.accountDebitAmount > 0) {
+          await createAccountTransaction(tx, {
+            lokwasiId: lokwasi.id,
+            type: 'DEBIT',
+            category: 'ADVANCE_RECOVERY',
+            amount: payment.accountDebitAmount,
+            description: `Advance recovery from payroll`,
+            paymentId: paymentRecord?.id,
+            transactionDate: runDateObj,
+            createdById: session!.user.id,
           })
         }
       }
@@ -296,6 +350,7 @@ export async function POST(request: NextRequest) {
         leaveCashoutDays: Number(p.leaveCashoutDays),
         leaveCashoutAmount: Number(p.leaveCashoutAmount),
         debtPayoutAmount: Number(p.debtPayoutAmount),
+        accountDebitAmount: Number(p.accountDebitAmount),
         netAmount: Number(p.netAmount),
       })),
     }

@@ -57,6 +57,7 @@ export async function GET(
         leaveCashoutDays: Number(p.leaveCashoutDays),
         leaveCashoutAmount: Number(p.leaveCashoutAmount),
         debtPayoutAmount: Number(p.debtPayoutAmount),
+        accountDebitAmount: Number(p.accountDebitAmount),
         netAmount: Number(p.netAmount),
       })),
     }
@@ -331,6 +332,7 @@ export async function PATCH(
         leaveCashoutDays: Number(p.leaveCashoutDays),
         leaveCashoutAmount: Number(p.leaveCashoutAmount),
         debtPayoutAmount: Number(p.debtPayoutAmount),
+        accountDebitAmount: Number(p.accountDebitAmount),
         netAmount: Number(p.netAmount),
       })),
     }

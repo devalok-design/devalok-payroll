@@ -32,6 +32,7 @@ interface Payment {
   leaveCashoutDays: number
   leaveCashoutAmount: number
   debtPayoutAmount: number
+  accountDebitAmount: number
   netAmount: number
   customerReference: string
   paymentStatus: string
@@ -446,6 +447,9 @@ export default function PayrollDetailPage({
                     Debt
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                    Recovery
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
                     TDS
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
@@ -495,6 +499,15 @@ export default function PayrollDetailPage({
                       {payment.debtPayoutAmount > 0 ? (
                         <span className="text-[var(--warning)]">
                           +{formatCurrency(payment.debtPayoutAmount)}
+                        </span>
+                      ) : (
+                        <span className="text-[var(--muted-foreground)]">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-4 text-right text-sm">
+                      {payment.accountDebitAmount > 0 ? (
+                        <span className="text-[var(--error)]">
+                          -{formatCurrency(payment.accountDebitAmount)}
                         </span>
                       ) : (
                         <span className="text-[var(--muted-foreground)]">-</span>

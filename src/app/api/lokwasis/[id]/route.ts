@@ -64,6 +64,13 @@ export async function GET(
       {} as Record<string, number>
     )
 
+    // Get account transactions for this lokwasi
+    const accountTransactions = await prisma.accountTransaction.findMany({
+      where: { lokwasiId: id },
+      orderBy: { transactionDate: 'desc' },
+      take: 20,
+    })
+
     // Transform Decimal to number for JSON serialization
     const lokwasiData = {
       ...lokwasi,
@@ -72,6 +79,7 @@ export async function GET(
       leaveBalance: Number(lokwasi.leaveBalance),
       initialLeaveBalance: Number(lokwasi.initialLeaveBalance),
       salaryDebtBalance: Number(lokwasi.salaryDebtBalance),
+      accountBalance: Number(lokwasi.accountBalance),
     }
 
     const paymentsData = payments.map((p) => ({
@@ -91,11 +99,20 @@ export async function GET(
       balanceAfter: Number(dp.balanceAfter),
     }))
 
+    const accountTransactionsData = accountTransactions.map((at) => ({
+      ...at,
+      amount: Number(at.amount),
+      balanceAfter: Number(at.balanceAfter),
+      tdsRate: at.tdsRate ? Number(at.tdsRate) : null,
+      tdsAmount: at.tdsAmount ? Number(at.tdsAmount) : null,
+    }))
+
     return NextResponse.json({
       lokwasi: lokwasiData,
       payments: paymentsData,
       debtPayments: debtPaymentsData,
       debtBreakdown,
+      accountTransactions: accountTransactionsData,
     })
   } catch (error) {
     console.error('Error fetching lokwasi:', error)
@@ -178,6 +195,7 @@ export async function PUT(
       leaveBalance: Number(lokwasi.leaveBalance),
       initialLeaveBalance: Number(lokwasi.initialLeaveBalance),
       salaryDebtBalance: Number(lokwasi.salaryDebtBalance),
+      accountBalance: Number(lokwasi.accountBalance),
     }
 
     return NextResponse.json({ lokwasi: lokwasiData })

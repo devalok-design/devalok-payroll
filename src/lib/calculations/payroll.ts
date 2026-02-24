@@ -12,6 +12,7 @@ export interface PayrollInput {
   tdsRate: number
   leaveBalance: number
   salaryDebtBalance: number
+  accountBalance: number // positive = company owes, negative = lokwasi owes
   leaveCashoutDays?: number
   debtPayoutAmount?: number
   // Bank details for payment generation
@@ -32,9 +33,10 @@ export interface PayrollCalculation {
   leaveCashoutDays: number
   leaveCashoutAmount: number
   debtPayoutAmount: number
+  accountDebitAmount: number // Amount deducted to recover negative account balance
   totalGross: number // grossSalary + leaveCashout + debtPayout
   tdsAmount: number
-  netAmount: number
+  netAmount: number // Final net after TDS and account recovery
   // Bank details snapshot
   bankAccount: string
   ifscCode: string
@@ -86,8 +88,18 @@ export function calculatePayroll(input: PayrollInput, cycleDays: number): Payrol
   const taxableAmount = input.grossSalary + leaveCashoutAmount + debtPayoutAmount
   const tdsAmount = calculateTds(taxableAmount, input.tdsRate)
 
-  // Net = taxable amount - TDS
-  const netAmount = taxableAmount - tdsAmount
+  // Net before account recovery
+  const netBeforeRecovery = taxableAmount - tdsAmount
+
+  // Account recovery: if balance is negative, deduct from net pay (100% recovery)
+  let accountDebitAmount = 0
+  if (input.accountBalance < 0) {
+    const amountOwed = Math.abs(input.accountBalance)
+    accountDebitAmount = Math.min(amountOwed, netBeforeRecovery)
+  }
+
+  // Final net = net after TDS minus account recovery
+  const netAmount = netBeforeRecovery - accountDebitAmount
 
   return {
     lokwasiId: input.lokwasiId,
@@ -97,6 +109,7 @@ export function calculatePayroll(input: PayrollInput, cycleDays: number): Payrol
     leaveCashoutDays,
     leaveCashoutAmount,
     debtPayoutAmount,
+    accountDebitAmount,
     totalGross: taxableAmount + debtPayoutAmount,
     tdsAmount,
     netAmount,

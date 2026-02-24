@@ -54,11 +54,26 @@ interface Lokwasi {
   leaveBalance: number
   initialLeaveBalance: number
   salaryDebtBalance: number
+  accountBalance: number
   status: string
   joinedDate: string
   terminatedDate: string | null
   createdAt: string
   updatedAt: string
+}
+
+interface AccountTransaction {
+  id: string
+  type: 'CREDIT' | 'DEBIT'
+  category: string
+  amount: number
+  balanceAfter: number
+  description: string
+  isTaxable: boolean
+  tdsRate: number | null
+  tdsAmount: number | null
+  transactionDate: string
+  notes: string | null
 }
 
 interface Payment {
@@ -107,6 +122,7 @@ export default function LokwasiDetailPage({
   const [payments, setPayments] = useState<Payment[]>([])
   const [debtPayments, setDebtPayments] = useState<DebtPayment[]>([])
   const [debtBreakdown, setDebtBreakdown] = useState<DebtBreakdown>({})
+  const [accountTransactions, setAccountTransactions] = useState<AccountTransaction[]>([])
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -162,6 +178,7 @@ export default function LokwasiDetailPage({
       setPayments(data.payments || [])
       setDebtPayments(data.debtPayments || [])
       setDebtBreakdown(data.debtBreakdown || {})
+      setAccountTransactions(data.accountTransactions || [])
     } catch (error) {
       console.error('Error fetching lokwasi:', error)
     } finally {
@@ -653,7 +670,7 @@ export default function LokwasiDetailPage({
         ) : (
           <div className="max-w-4xl">
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <div className="bg-white p-4 border border-[var(--border)]">
                 <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
                   Bi-weekly Salary
@@ -686,7 +703,60 @@ export default function LokwasiDetailPage({
                   {formatCurrency(lokwasi.salaryDebtBalance)}
                 </p>
               </div>
+              <div className={`p-4 border ${
+                lokwasi.accountBalance < 0
+                  ? 'bg-[var(--error-light)] border-[var(--error)]'
+                  : lokwasi.accountBalance > 0
+                  ? 'bg-[var(--success-light)] border-[var(--success)]'
+                  : 'bg-white border-[var(--border)]'
+              }`}>
+                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+                  Account Balance
+                </p>
+                <p className={`text-xl font-semibold ${
+                  lokwasi.accountBalance < 0
+                    ? 'text-[var(--error)]'
+                    : lokwasi.accountBalance > 0
+                    ? 'text-[var(--success)]'
+                    : 'text-[var(--foreground)]'
+                }`}>
+                  {lokwasi.accountBalance < 0 ? '-' : ''}{formatCurrency(Math.abs(lokwasi.accountBalance))}
+                </p>
+                <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                  {lokwasi.accountBalance < 0
+                    ? 'Owes company'
+                    : lokwasi.accountBalance > 0
+                    ? 'Company owes'
+                    : 'Settled'}
+                </p>
+              </div>
             </div>
+
+            {/* Quick Actions */}
+            {lokwasi.status === 'ACTIVE' && (
+              <div className="flex items-center gap-3 mb-6">
+                <Link
+                  href={`/lokwasis/${lokwasi.id}/manual-payment`}
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white font-medium text-sm hover:bg-[var(--devalok-700)] transition-colors"
+                >
+                  <Banknote className="w-4 h-4" />
+                  Record Manual Payment
+                </Link>
+              </div>
+            )}
+
+            {/* Negative Balance Warning */}
+            {lokwasi.accountBalance < 0 && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  This lokwasi has an outstanding advance of {formatCurrency(Math.abs(lokwasi.accountBalance))}.
+                  {lokwasi.status === 'ACTIVE'
+                    ? ' This will be automatically deducted from the next payroll.'
+                    : ' This amount is pending recovery.'}
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Details Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -985,6 +1055,54 @@ export default function LokwasiDetailPage({
                 </div>
               )}
             </div>
+
+            {/* Account Statement */}
+            {accountTransactions.length > 0 && (
+              <div className="bg-white border border-[var(--border)] mt-6">
+                <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-[var(--muted-foreground)]" />
+                  <h2 className="text-sm font-semibold text-[var(--foreground)]">
+                    Account Statement
+                  </h2>
+                </div>
+                <div className="divide-y divide-[var(--border)]">
+                  {accountTransactions.map((txn) => (
+                    <div
+                      key={txn.id}
+                      className="px-6 py-4 flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="font-medium text-[var(--foreground)]">
+                          {txn.description}
+                        </p>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-[var(--muted-foreground)]">
+                          <span>{formatDate(txn.transactionDate)}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {txn.category.replace(/_/g, ' ')}
+                          </Badge>
+                          {txn.isTaxable && txn.tdsAmount && (
+                            <span>TDS: {formatCurrency(txn.tdsAmount)}</span>
+                          )}
+                        </div>
+                        {txn.notes && (
+                          <p className="text-xs text-[var(--muted-foreground)] mt-1">{txn.notes}</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-semibold ${
+                          txn.type === 'CREDIT' ? 'text-[var(--success)]' : 'text-[var(--error)]'
+                        }`}>
+                          {txn.type === 'CREDIT' ? '+' : '-'}{formatCurrency(txn.amount)}
+                        </p>
+                        <p className="text-xs text-[var(--muted-foreground)]">
+                          Bal: {txn.balanceAfter < 0 ? '-' : ''}{formatCurrency(Math.abs(txn.balanceAfter))}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Metadata */}
             <div className="mt-6 flex items-center gap-6 text-xs text-[var(--muted-foreground)]">

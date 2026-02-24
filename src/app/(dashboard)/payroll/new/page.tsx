@@ -23,6 +23,7 @@ interface Lokwasi {
   tdsRate: number
   leaveBalance: number
   salaryDebtBalance: number
+  accountBalance: number
   isAxisBank: boolean
   bankName: string
 }
@@ -36,6 +37,7 @@ interface PaymentCalculation {
   leaveCashoutDays: number
   leaveCashoutAmount: number
   debtPayoutAmount: number
+  accountDebitAmount: number
   totalGross: number
   tdsAmount: number
   netAmount: number
@@ -69,24 +71,30 @@ export default function NewPayrollPage() {
       setLokwasis(activeLokwasis)
 
       // Initialize payments with calculations
-      const initialPayments = activeLokwasis.map((l: Lokwasi) => ({
-        lokwasiId: l.id,
-        name: l.name,
-        employeeCode: l.employeeCode,
-        grossSalary: Number(l.grossSalary),
-        tdsRate: Number(l.tdsRate),
-        leaveCashoutDays: 0,
-        leaveCashoutAmount: 0,
-        debtPayoutAmount: 0,
-        totalGross: Number(l.grossSalary),
-        tdsAmount: Math.ceil(Number(l.grossSalary) * Number(l.tdsRate) / 100),
-        netAmount:
-          Number(l.grossSalary) -
-          Math.ceil(Number(l.grossSalary) * Number(l.tdsRate) / 100),
-        isAxisBank: l.isAxisBank,
-        bankName: l.bankName,
-        include: true,
-      }))
+      const initialPayments = activeLokwasis.map((l: Lokwasi) => {
+        const gross = Number(l.grossSalary)
+        const tds = Math.ceil(gross * Number(l.tdsRate) / 100)
+        const netBeforeRecovery = gross - tds
+        const acctBal = Number(l.accountBalance || 0)
+        const recovery = acctBal < 0 ? Math.min(Math.abs(acctBal), netBeforeRecovery) : 0
+        return {
+          lokwasiId: l.id,
+          name: l.name,
+          employeeCode: l.employeeCode,
+          grossSalary: gross,
+          tdsRate: Number(l.tdsRate),
+          leaveCashoutDays: 0,
+          leaveCashoutAmount: 0,
+          debtPayoutAmount: 0,
+          accountDebitAmount: recovery,
+          totalGross: gross,
+          tdsAmount: tds,
+          netAmount: netBeforeRecovery - recovery,
+          isAxisBank: l.isAxisBank,
+          bankName: l.bankName,
+          include: true,
+        }
+      })
       setPayments(initialPayments)
     } catch (err) {
       setError('Failed to load employees')
@@ -96,17 +104,26 @@ export default function NewPayrollPage() {
     }
   }
 
-  const calculatePayment = (payment: PaymentCalculation): PaymentCalculation => {
+  const calculatePayment = (payment: PaymentCalculation, lokwasiList: Lokwasi[]): PaymentCalculation => {
     const dailyRate = payment.grossSalary / 14
     const leaveCashoutAmount = Math.round(dailyRate * payment.leaveCashoutDays * 100) / 100
-    const taxableAmount = payment.grossSalary + leaveCashoutAmount
+    // TDS applies to all payments: salary, leave cashout, and debt payout
+    const taxableAmount = payment.grossSalary + leaveCashoutAmount + payment.debtPayoutAmount
     const tdsAmount = Math.ceil(taxableAmount * payment.tdsRate / 100)
-    const netAmount = taxableAmount - tdsAmount + payment.debtPayoutAmount
+    const netBeforeRecovery = taxableAmount - tdsAmount
+
+    // Account recovery: if balance is negative, deduct from net pay
+    const lokwasiData = lokwasiList.find((l) => l.id === payment.lokwasiId)
+    const acctBal = lokwasiData ? Number(lokwasiData.accountBalance || 0) : 0
+    const accountDebitAmount = acctBal < 0 ? Math.min(Math.abs(acctBal), netBeforeRecovery) : 0
+
+    const netAmount = netBeforeRecovery - accountDebitAmount
 
     return {
       ...payment,
       leaveCashoutAmount,
-      totalGross: taxableAmount + payment.debtPayoutAmount,
+      accountDebitAmount,
+      totalGross: taxableAmount,
       tdsAmount,
       netAmount,
     }
@@ -121,7 +138,7 @@ export default function NewPayrollPage() {
       prev.map((p) => {
         if (p.lokwasiId !== lokwasiId) return p
         const updated = { ...p, [field]: value }
-        return calculatePayment(updated)
+        return calculatePayment(updated, lokwasis)
       })
     )
   }

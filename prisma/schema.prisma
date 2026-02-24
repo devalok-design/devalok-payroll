@@ -31,6 +31,8 @@ model User {
   auditLogs          AuditLog[]
   leaveTransactions  LeaveTransaction[]
   settingsUpdates    Setting[]
+  accountTransactions AccountTransaction[]
+  manualPayments     ManualPayment[]
 
   @@map("users")
 }
@@ -67,8 +69,11 @@ model Lokwasi {
   leaveBalance        Decimal   @default(0) @map("leave_balance") @db.Decimal(5, 2) // Days
   initialLeaveBalance Decimal   @default(0) @map("initial_leave_balance") @db.Decimal(5, 2) // Carried from previous year
 
-  // Salary debt (from proprietorship transition)
+  // Salary debt (from proprietorship transition) - LEGACY, use accountBalance for new operations
   salaryDebtBalance   Decimal   @default(0) @map("salary_debt_balance") @db.Decimal(14, 2)
+
+  // Account balance: positive = company owes lokwasi, negative = lokwasi owes company
+  accountBalance      Decimal   @default(0) @map("account_balance") @db.Decimal(14, 2)
 
   // Status
   status              LokwasiStatus @default(ACTIVE)
@@ -86,6 +91,8 @@ model Lokwasi {
   tdsMonthly          TdsMonthly[]
   leaveTransactions   LeaveTransaction[]
   debtPayments        DebtPayment[]
+  accountTransactions AccountTransaction[]
+  manualPayments      ManualPayment[]
 
   @@map("lokwasis")
 }
@@ -156,6 +163,7 @@ model Payment {
   leaveCashoutDays    Decimal       @default(0) @map("leave_cashout_days") @db.Decimal(5, 2)
   leaveCashoutAmount  Decimal       @default(0) @map("leave_cashout_amount") @db.Decimal(12, 2)
   debtPayoutAmount    Decimal       @default(0) @map("debt_payout_amount") @db.Decimal(12, 2)
+  accountDebitAmount  Decimal       @default(0) @map("account_debit_amount") @db.Decimal(12, 2) // Amount deducted to recover negative account balance
   netAmount           Decimal       @map("net_amount") @db.Decimal(12, 2)
 
   // Bank Reference
@@ -395,4 +403,97 @@ model PayrollSchedule {
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   @@map("payroll_schedule")
+}
+
+// ============================================
+// ACCOUNT LEDGER
+// ============================================
+
+model AccountTransaction {
+  id              String                @id @default(cuid())
+  lokwasiId       String                @map("lokwasi_id")
+  lokwasi         Lokwasi               @relation(fields: [lokwasiId], references: [id])
+
+  // Transaction details
+  type            AccountTransactionType // CREDIT (increases balance) or DEBIT (decreases balance)
+  category        AccountCategory        // What kind of transaction
+  amount          Decimal               @db.Decimal(12, 2) // Always positive
+  balanceAfter    Decimal               @map("balance_after") @db.Decimal(14, 2) // Running balance after this transaction
+  description     String                // Human-readable description
+
+  // TDS tracking for taxable transactions
+  isTaxable       Boolean               @default(false) @map("is_taxable")
+  tdsRate         Decimal?              @map("tds_rate") @db.Decimal(5, 2)
+  tdsAmount       Decimal?              @map("tds_amount") @db.Decimal(12, 2)
+
+  // Links to source records
+  paymentId       String?               @map("payment_id")     // If from regular payroll
+  manualPaymentId String?               @map("manual_payment_id") // If from manual payment
+
+  // Metadata
+  transactionDate DateTime              @map("transaction_date")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  createdById     String?               @map("created_by_id")
+  createdBy       User?                 @relation(fields: [createdById], references: [id])
+  notes           String?
+
+  @@map("account_transactions")
+}
+
+enum AccountTransactionType {
+  CREDIT  // Increases balance (company owes more to employee)
+  DEBIT   // Decreases balance (employee owes more / recovery from payroll)
+}
+
+enum AccountCategory {
+  REGULAR_SALARY      // Regular payroll salary
+  ADVANCE_SALARY      // Advance salary payment
+  BONUS               // Bonus / incentive
+  REIMBURSEMENT       // Expense reimbursement
+  LOAN_DISBURSEMENT   // Loan given to employee
+  SALARY_DEBT         // Legacy salary debt from proprietorship transition
+  LEAVE_CASHOUT       // Leave cashout
+  ADVANCE_RECOVERY    // Deduction from payroll to recover advance
+  LOAN_RECOVERY       // Deduction from payroll to recover loan
+  ADJUSTMENT          // Manual adjustment (correction)
+}
+
+model ManualPayment {
+  id                  String              @id @default(cuid())
+  lokwasiId           String              @map("lokwasi_id")
+  lokwasi             Lokwasi             @relation(fields: [lokwasiId], references: [id])
+
+  // Payment details
+  category            AccountCategory     // ADVANCE_SALARY, BONUS, REIMBURSEMENT, etc.
+  grossAmount         Decimal             @map("gross_amount") @db.Decimal(12, 2)
+  tdsRate             Decimal             @default(0) @map("tds_rate") @db.Decimal(5, 2)
+  tdsAmount           Decimal             @default(0) @map("tds_amount") @db.Decimal(12, 2)
+  netAmount           Decimal             @map("net_amount") @db.Decimal(12, 2)
+
+  // Status
+  status              ManualPaymentStatus @default(PENDING)
+  paidAt              DateTime?           @map("paid_at")
+
+  // Bank details snapshot
+  customerReference   String              @map("customer_reference") // MAN-YYYYMMDD-XXX
+  snapshotBankAccount String              @map("snapshot_bank_account")
+  snapshotIfsc        String              @map("snapshot_ifsc")
+  snapshotBankName    String              @map("snapshot_bank_name")
+  snapshotIsAxisBank  Boolean             @map("snapshot_is_axis_bank")
+
+  // Metadata
+  paymentDate         DateTime            @map("payment_date")
+  notes               String?
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  createdById         String?             @map("created_by_id")
+  createdBy           User?               @relation(fields: [createdById], references: [id])
+
+  @@map("manual_payments")
+}
+
+enum ManualPaymentStatus {
+  PENDING     // Created, not yet paid
+  PAID        // Confirmed paid
+  CANCELLED   // Voided
 }
