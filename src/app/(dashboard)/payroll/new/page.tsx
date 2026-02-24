@@ -404,6 +404,9 @@ export default function NewPayrollPage() {
                         TDS
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                        Recovery
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
                         Net
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
@@ -503,6 +506,18 @@ export default function NewPayrollPage() {
                           <td className="px-4 py-4 text-right text-sm text-[var(--muted-foreground)]">
                             {formatCurrency(payment.tdsAmount)}
                             <p className="text-xs">({payment.tdsRate}%)</p>
+                          </td>
+                          <td className="px-4 py-4 text-right text-sm">
+                            {payment.accountDebitAmount > 0 ? (
+                              <span className="text-[var(--error)]">
+                                -{formatCurrency(payment.accountDebitAmount)}
+                                <span className="text-xs block text-[var(--muted-foreground)]">
+                                  advance
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-[var(--muted-foreground)]">-</span>
+                            )}
                           </td>
                           <td className="px-4 py-4 text-right font-semibold text-[var(--foreground)]">
                             {formatCurrency(payment.netAmount)}

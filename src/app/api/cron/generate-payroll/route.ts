@@ -96,7 +96,17 @@ export async function GET(request: NextRequest) {
         const gross = Number(lokwasi.grossSalary)
         const tdsRate = Number(lokwasi.tdsRate)
         const tds = Math.ceil(gross * tdsRate / 100)
-        const net = gross - tds
+        const netBeforeRecovery = gross - tds
+
+        // Account recovery: if balance is negative (lokwasi owes company), deduct from net pay
+        const accountBalance = Number(lokwasi.accountBalance)
+        let accountDebitAmount = 0
+        if (accountBalance < 0) {
+          const amountOwed = Math.abs(accountBalance)
+          accountDebitAmount = Math.min(amountOwed, netBeforeRecovery)
+        }
+
+        const net = netBeforeRecovery - accountDebitAmount
 
         totalGross += gross
         totalTds += tds
@@ -115,6 +125,7 @@ export async function GET(request: NextRequest) {
           leaveCashoutDays: 0,
           leaveCashoutAmount: 0,
           debtPayoutAmount: 0,
+          accountDebitAmount,
           netAmount: net,
           customerReference: ref,
           snapshotPan: lokwasi.pan || '',
