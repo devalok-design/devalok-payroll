@@ -35,9 +35,10 @@ async function getDashboardData() {
     where: { status: 'ACTIVE' },
   })
 
+  // Total debt includes both active AND terminated lokwasis (terminated still owed money)
   const totalDebt = await prisma.lokwasi.aggregate({
     _sum: { salaryDebtBalance: true },
-    where: { status: 'ACTIVE' },
+    where: { salaryDebtBalance: { gt: 0 } },
   })
 
   const recentPayrolls = await prisma.payrollRun.findMany({

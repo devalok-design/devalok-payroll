@@ -25,9 +25,12 @@ export async function GET(
       return NextResponse.json({ error: 'Lokwasi not found' }, { status: 404 })
     }
 
-    // Get recent payments
+    // Get recent payments - exclude payments from CANCELLED payroll runs
     const payments = await prisma.payment.findMany({
-      where: { lokwasiId: id },
+      where: {
+        lokwasiId: id,
+        payrollRun: { status: { not: 'CANCELLED' } },
+      },
       orderBy: { createdAt: 'desc' },
       take: 20,
       include: {
@@ -218,12 +221,30 @@ export async function DELETE(
       return NextResponse.json({ error: 'Lokwasi not found' }, { status: 404 })
     }
 
-    // Soft delete by setting status to TERMINATED
+    // Calculate total outstanding debt: sum of all PENDING payroll payments for this lokwasi
+    const pendingPayments = await prisma.payment.findMany({
+      where: {
+        lokwasiId: id,
+        payrollRun: { status: 'PENDING' },
+      },
+      select: { grossAmount: true },
+    })
+    const pendingDebt = pendingPayments.reduce(
+      (sum, p) => sum + Number(p.grossAmount),
+      0
+    )
+
+    // Total owed = existing debt balance + any pending (unprocessed) salary
+    const totalDebtOwed = Number(lokwasi.salaryDebtBalance) + pendingDebt
+
+    // Soft delete by setting status to TERMINATED and recording total debt
     await prisma.lokwasi.update({
       where: { id },
       data: {
         status: 'TERMINATED',
         terminatedDate: new Date(),
+        salaryDebtBalance: totalDebtOwed,
+        grossSalary: 0, // No future salary
       },
     })
 

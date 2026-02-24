@@ -34,9 +34,10 @@ async function getDebtData() {
     },
   })
 
-  // Get total debt paid
+  // Get total debt paid (only actual repayments, not additions)
   const totalPaid = await prisma.debtPayment.aggregate({
     _sum: { amount: true },
+    where: { isAddition: false },
   })
 
   // Get recent debt payments

@@ -214,6 +214,14 @@ export async function PATCH(
         data: updateData,
       })
 
+      // Mark all payments as FAILED when payroll run is cancelled
+      if (status === 'CANCELLED') {
+        await tx.payment.updateMany({
+          where: { payrollRunId: id },
+          data: { paymentStatus: 'FAILED' },
+        })
+      }
+
       // Update payment statuses when marking payroll as PAID
       if (status === 'PAID') {
         await tx.payment.updateMany({

@@ -116,6 +116,11 @@ export async function POST(
           where: { id: originalRun.id },
           data: { status: 'CANCELLED' },
         })
+        // Mark all payments in the cancelled run as FAILED
+        await tx.payment.updateMany({
+          where: { payrollRunId: originalRun.id },
+          data: { paymentStatus: 'FAILED' },
+        })
       }
 
       // Create the new payroll run
