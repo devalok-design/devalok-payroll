@@ -18,9 +18,10 @@ interface GenerateResult {
 
 interface Props {
   autoGenerate?: boolean
+  hidden?: boolean
 }
 
-export function GeneratePayrollsButton({ autoGenerate = false }: Props) {
+export function GeneratePayrollsButton({ autoGenerate = false, hidden = false }: Props) {
   const router = useRouter()
   const [isGenerating, setIsGenerating] = useState(false)
   const [result, setResult] = useState<GenerateResult | null>(null)
@@ -64,6 +65,21 @@ export function GeneratePayrollsButton({ autoGenerate = false }: Props) {
       handleGenerate()
     }
   }, [autoGenerate]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Hidden mode: only show a brief alert if payrolls were auto-generated
+  if (hidden) {
+    if (result && result.generated > 0) {
+      return (
+        <div className="mb-4 p-3 rounded-sm text-sm bg-success/10 text-success">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4" />
+            <span>{result.message}</span>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
 
   return (
     <div className="space-y-2">

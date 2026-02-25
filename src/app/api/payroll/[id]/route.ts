@@ -253,20 +253,24 @@ export async function PATCH(
         // Update payroll schedule with next date based on cycle days
         const activeSchedule = await tx.payrollSchedule.findFirst({
           where: { isActive: true },
-          select: { id: true, cycleDays: true },
+          select: { id: true, cycleDays: true, lastPayrollDate: true },
         })
 
         if (activeSchedule) {
-          const nextDate = new Date(run.runDate)
-          nextDate.setDate(nextDate.getDate() + activeSchedule.cycleDays)
+          // Only advance lastPayrollDate forward — marking an older payroll
+          // as PAID should not regress the schedule
+          if (run.runDate > activeSchedule.lastPayrollDate) {
+            const nextDate = new Date(run.runDate)
+            nextDate.setDate(nextDate.getDate() + activeSchedule.cycleDays)
 
-          await tx.payrollSchedule.update({
-            where: { id: activeSchedule.id },
-            data: {
-              lastPayrollDate: run.runDate,
-              nextPayrollDate: nextDate,
-            },
-          })
+            await tx.payrollSchedule.update({
+              where: { id: activeSchedule.id },
+              data: {
+                lastPayrollDate: run.runDate,
+                nextPayrollDate: nextDate,
+              },
+            })
+          }
         }
 
         // Update TDS monthly records - use CURRENT date (when payment is processed)
