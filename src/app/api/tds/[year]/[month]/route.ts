@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/rbac'
 import { TdsFilingStatus } from '@prisma/client'
 
 // GET /api/tds/[year]/[month] - Get TDS data for a specific month
@@ -90,9 +91,8 @@ export async function PATCH(
   { params }: { params: { year: string; month: string } }
 ) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireAdmin(session)
+  if (rbacError) return rbacError
 
   const { year, month } = params
   const yearNum = parseInt(year)

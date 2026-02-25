@@ -19,7 +19,7 @@ export const lokwasiSchema = z.object({
   beneficiaryNickname: z.string().min(2, 'Beneficiary nickname required'),
   isAxisBank: z.boolean().default(false),
   tdsRate: z.coerce.number().min(0).max(100).default(10),
-  grossSalary: z.coerce.number().min(0, 'Salary must be positive'),
+  grossSalary: z.coerce.number().min(1, 'Salary must be positive'),
   natureOfWork: z.string().default('Professional Services'),
   leaveBalance: z.coerce.number().min(0).default(0),
   salaryDebtBalance: z.coerce.number().min(0).default(0),

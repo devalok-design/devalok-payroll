@@ -30,25 +30,6 @@ export function daysBetween(date1: Date, date2: Date): number {
 }
 
 /**
- * Calculate TDS amount with ceiling to nearest rupee
- */
-export function calculateTds(grossAmount: number, tdsRate: number): number {
-  return Math.ceil(grossAmount * tdsRate / 100)
-}
-
-/**
- * Generate customer reference for bank transfers
- * Format: DVLK-YYYYMMDD-###
- */
-export function generateCustomerReference(date: Date, sequenceNumber: number): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const seq = String(sequenceNumber).padStart(3, '0')
-  return `DVLK-${year}${month}${day}-${seq}`
-}
-
-/**
  * Mask PAN number for display (show first 3 and last 2)
  */
 export function maskPan(pan: string): string {
@@ -70,48 +51,6 @@ export function maskAadhaar(aadhaar: string): string {
 export function maskBankAccount(account: string): string {
   if (account.length < 4) return account
   return `****${account.slice(-4)}`
-}
-
-/**
- * Get overdue payroll dates based on last payroll date
- * Returns array of dates that should have been processed (every 14 days)
- */
-export function getOverduePayrollDates(lastPayrollDate: Date): Date[] {
-  const dates: Date[] = []
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  let nextDate = new Date(lastPayrollDate)
-  nextDate.setDate(nextDate.getDate() + 14)
-  nextDate.setHours(0, 0, 0, 0)
-
-  while (nextDate <= today) {
-    dates.push(new Date(nextDate))
-    nextDate.setDate(nextDate.getDate() + 14)
-  }
-
-  return dates
-}
-
-/**
- * Validate PAN format
- */
-export function isValidPan(pan: string): boolean {
-  return /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)
-}
-
-/**
- * Validate Aadhaar format (12 digits)
- */
-export function isValidAadhaar(aadhaar: string): boolean {
-  return /^[0-9]{12}$/.test(aadhaar)
-}
-
-/**
- * Validate IFSC code format
- */
-export function isValidIfsc(ifsc: string): boolean {
-  return /^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)
 }
 
 /**

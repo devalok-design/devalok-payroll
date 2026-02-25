@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
-import { formatCurrency, daysBetween, getOverduePayrollDates } from '@/lib/utils'
+import { formatCurrency, daysBetween } from '@/lib/utils'
+import { getOverduePayrollDates } from '@/lib/calculations/payroll'
 import {
   CheckCircle,
   Clock,
@@ -67,7 +68,7 @@ async function getDashboardData() {
 
   let overduePayrolls: Date[] = []
   if (schedule) {
-    overduePayrolls = getOverduePayrollDates(schedule.lastPayrollDate)
+    overduePayrolls = getOverduePayrollDates(schedule.lastPayrollDate, schedule.cycleDays)
   }
 
   // Days since last actual payment (not scheduled date)

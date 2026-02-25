@@ -190,7 +190,7 @@ export async function PATCH(
 
             if (existingTds) {
               // Decrement the TDS amounts that were added when marking as PAID
-              const newTotalGross = Number(existingTds.totalGross) - (Number(payment.grossAmount) + Number(payment.leaveCashoutAmount))
+              const newTotalGross = Number(existingTds.totalGross) - (Number(payment.grossAmount) + Number(payment.leaveCashoutAmount) + Number(payment.debtPayoutAmount))
               const newTotalTds = Number(existingTds.totalTds) - Number(payment.tdsAmount)
               const newTotalNet = Number(existingTds.totalNet) - Number(payment.netAmount)
               const newPaymentCount = existingTds.paymentCount - 1
@@ -295,7 +295,7 @@ export async function PATCH(
             await tx.tdsMonthly.update({
               where: { id: existingTds.id },
               data: {
-                totalGross: { increment: Number(payment.grossAmount) + Number(payment.leaveCashoutAmount) },
+                totalGross: { increment: Number(payment.grossAmount) + Number(payment.leaveCashoutAmount) + Number(payment.debtPayoutAmount) },
                 totalTds: { increment: Number(payment.tdsAmount) },
                 totalNet: { increment: Number(payment.netAmount) },
                 paymentCount: { increment: 1 },
@@ -308,7 +308,7 @@ export async function PATCH(
                 year,
                 month,
                 lokwasiId: payment.lokwasiId,
-                totalGross: Number(payment.grossAmount) + Number(payment.leaveCashoutAmount),
+                totalGross: Number(payment.grossAmount) + Number(payment.leaveCashoutAmount) + Number(payment.debtPayoutAmount),
                 totalTds: Number(payment.tdsAmount),
                 totalNet: Number(payment.netAmount),
                 paymentCount: 1,
