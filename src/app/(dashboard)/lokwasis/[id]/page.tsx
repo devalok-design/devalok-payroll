@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { Header } from '@/components/layout/Header'
 import { formatCurrency, maskAadhaar, maskBankAccount, formatDate } from '@/lib/utils'
 import { INDIAN_BANKS, isAxisBankIFSC, getBankFromIFSC } from '@/lib/constants/banks'
@@ -27,6 +28,9 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
+import { StatusBadge } from '@/components/ui/status-badge'
 import {
   Dialog,
   DialogContent,
@@ -109,6 +113,22 @@ interface DebtBreakdown {
   OTHER?: number
   total?: number
   paid?: number
+}
+
+function getAccountBalanceClasses(balance: number): { container: string; text: string } {
+  if (balance < 0) {
+    return { container: 'bg-error-light border-error', text: 'text-error' }
+  }
+  if (balance > 0) {
+    return { container: 'bg-success-light border-success', text: 'text-success' }
+  }
+  return { container: 'bg-card border-border', text: 'text-foreground' }
+}
+
+function getAccountBalanceLabel(balance: number): string {
+  if (balance < 0) return 'Owes company'
+  if (balance > 0) return 'Company owes'
+  return 'Settled'
 }
 
 export default function LokwasiDetailPage({
@@ -223,14 +243,17 @@ export default function LokwasiDetailPage({
         } else {
           setErrors({ general: error.message || 'Failed to update lokwasi' })
         }
+        toast.error('Failed to save changes')
         return
       }
 
       const updated = await response.json()
       setLokwasi(updated.lokwasi)
       setIsEditing(false)
+      toast.success('Changes saved successfully')
     } catch {
       setErrors({ general: 'An error occurred. Please try again.' })
+      toast.error('An error occurred. Please try again.')
     } finally {
       setIsSaving(false)
     }
@@ -246,14 +269,17 @@ export default function LokwasiDetailPage({
       if (!response.ok) {
         const error = await response.json()
         setErrors({ general: error.message || 'Failed to terminate lokwasi' })
+        toast.error(error.message || 'Failed to terminate lokwasi')
         return
       }
 
       // Refresh the data
       await fetchLokwasi()
       setShowTerminateDialog(false)
+      toast.success('Lokwasi terminated successfully')
     } catch {
       setErrors({ general: 'An error occurred. Please try again.' })
+      toast.error('An error occurred. Please try again.')
     } finally {
       setIsTerminating(false)
     }
@@ -264,7 +290,7 @@ export default function LokwasiDetailPage({
       <>
         <Header title="Loading..." />
         <main className="flex-1 flex items-center justify-center">
-          <div className="text-[var(--muted-foreground)]">Loading lokwasi...</div>
+          <div className="text-muted-foreground">Loading lokwasi...</div>
         </main>
       </>
     )
@@ -276,8 +302,8 @@ export default function LokwasiDetailPage({
         <Header title="Not Found" />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-[var(--muted-foreground)] mb-4">Lokwasi not found</p>
-            <Link href="/lokwasis" className="text-[var(--primary)] hover:underline">
+            <p className="text-muted-foreground mb-4">Lokwasi not found</p>
+            <Link href="/lokwasis" className="text-primary hover:underline">
               Back to Lokwasis
             </Link>
           </div>
@@ -295,7 +321,7 @@ export default function LokwasiDetailPage({
         <div className="flex items-center justify-between mb-6">
           <Link
             href="/lokwasis"
-            className="inline-flex items-center gap-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Lokwasis
@@ -339,17 +365,7 @@ export default function LokwasiDetailPage({
           <span className="text-sm font-medium text-muted-foreground">
             {lokwasi.employeeCode}
           </span>
-          <Badge
-            variant={
-              lokwasi.status === 'ACTIVE'
-                ? 'default'
-                : lokwasi.status === 'INACTIVE'
-                ? 'secondary'
-                : 'destructive'
-            }
-          >
-            {lokwasi.status}
-          </Badge>
+          <StatusBadge status={lokwasi.status} />
         </div>
 
         {/* Terminate Confirmation Dialog */}
@@ -401,125 +417,126 @@ export default function LokwasiDetailPage({
         {isEditing ? (
           <form onSubmit={handleSave} className="max-w-4xl">
             {errors.general && (
-              <div className="mb-6 p-4 bg-[var(--error-light)] border border-[var(--error)] text-[var(--error)]">
-                {errors.general}
-              </div>
+              <Alert variant="destructive" className="mb-6">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{errors.general}</AlertDescription>
+              </Alert>
             )}
 
             {/* Personal Information */}
-            <div className="bg-white border border-[var(--border)] mb-6">
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                <User className="w-4 h-4 text-[var(--muted-foreground)]" />
-                <h2 className="text-sm font-semibold text-[var(--foreground)]">
+            <Card className="rounded-none shadow-none py-0 gap-0 mb-6">
+              <CardHeader className="px-6 py-4 border-b border-border flex-row items-center gap-2">
+                <User className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm">
                   Personal Information
-                </h2>
-              </div>
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                     Full Name
                   </label>
-                  <input
+                  <Input
                     name="name"
                     type="text"
                     defaultValue={lokwasi.name}
                     required
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                    className="h-12"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                     PAN Number
                   </label>
-                  <input
+                  <Input
                     name="pan"
                     type="text"
                     defaultValue={lokwasi.pan}
                     required
                     maxLength={10}
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)] uppercase"
+                    className="h-12 uppercase"
                   />
                   {errors.pan && (
-                    <p className="mt-1 text-sm text-[var(--error)]">{errors.pan}</p>
+                    <p className="mt-1 text-sm text-error">{errors.pan}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                     Aadhaar Number
                   </label>
-                  <input
+                  <Input
                     name="aadhaar"
                     type="text"
                     defaultValue={lokwasi.aadhaar}
                     required
                     maxLength={14}
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                    className="h-12"
                   />
                   {errors.aadhaar && (
-                    <p className="mt-1 text-sm text-[var(--error)]">{errors.aadhaar}</p>
+                    <p className="mt-1 text-sm text-error">{errors.aadhaar}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                     Nature of Work
                   </label>
-                  <input
+                  <Input
                     name="natureOfWork"
                     type="text"
                     defaultValue={lokwasi.natureOfWork}
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                    className="h-12"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                     Status
                   </label>
                   <select
                     name="status"
                     defaultValue={lokwasi.status}
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                    className="w-full px-4 h-12 border border-input bg-background focus:outline-none focus:border-ring"
                   >
                     <option value="ACTIVE">Active</option>
                     <option value="INACTIVE">Inactive</option>
                     <option value="TERMINATED">Terminated</option>
                   </select>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Bank Details */}
-            <div className="bg-white border border-[var(--border)] mb-6">
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-[var(--muted-foreground)]" />
-                <h2 className="text-sm font-semibold text-[var(--foreground)]">
+            <Card className="rounded-none shadow-none py-0 gap-0 mb-6">
+              <CardHeader className="px-6 py-4 border-b border-border flex-row items-center gap-2">
+                <CreditCard className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm">
                   Bank Details
-                </h2>
-              </div>
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                     IFSC Code
                   </label>
-                  <input
+                  <Input
                     name="ifscCode"
                     type="text"
                     value={editIfscCode}
                     onChange={handleIfscChange}
                     required
                     maxLength={11}
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)] uppercase"
+                    className="h-12 uppercase"
                   />
                   {errors.ifscCode && (
-                    <p className="mt-1 text-sm text-[var(--error)]">{errors.ifscCode}</p>
+                    <p className="mt-1 text-sm text-error">{errors.ifscCode}</p>
                   )}
                   {editIsAxisBank && (
-                    <p className="mt-1 text-xs text-[var(--success)]">
+                    <p className="mt-1 text-xs text-success">
                       Axis Bank detected - will use within-bank transfer
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                     Bank Name
                   </label>
                   <select
@@ -527,7 +544,7 @@ export default function LokwasiDetailPage({
                     value={editBankName}
                     onChange={(e) => setEditBankName(e.target.value)}
                     required
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                    className="w-full px-4 h-12 border border-input bg-background focus:outline-none focus:border-ring"
                   >
                     <option value="">Select a bank</option>
                     {INDIAN_BANKS.map((bank) => (
@@ -538,27 +555,27 @@ export default function LokwasiDetailPage({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                     Account Number
                   </label>
-                  <input
+                  <Input
                     name="bankAccount"
                     type="text"
                     defaultValue={lokwasi.bankAccount}
                     required
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                    className="h-12"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                     Beneficiary Nickname
                   </label>
-                  <input
+                  <Input
                     name="beneficiaryNickname"
                     type="text"
                     defaultValue={lokwasi.beneficiaryNickname}
                     required
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)] uppercase"
+                    className="h-12 uppercase"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -568,166 +585,155 @@ export default function LokwasiDetailPage({
                       type="checkbox"
                       checked={editIsAxisBank}
                       onChange={(e) => setEditIsAxisBank(e.target.checked)}
-                      className="w-5 h-5 border border-[var(--border)] accent-[var(--primary)]"
+                      className="w-5 h-5 border border-input accent-primary"
                     />
-                    <span className="text-sm text-[var(--foreground)]">
+                    <span className="text-sm text-foreground">
                       This is an Axis Bank account
                     </span>
                   </label>
-                  <p className="mt-1 ml-8 text-xs text-[var(--muted-foreground)]">
+                  <p className="mt-1 ml-8 text-xs text-muted-foreground">
                     Auto-detected from IFSC code (UTIB prefix). Override if needed.
                   </p>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Compensation */}
-            <div className="bg-white border border-[var(--border)] mb-6">
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-[var(--muted-foreground)]" />
-                <h2 className="text-sm font-semibold text-[var(--foreground)]">
+            <Card className="rounded-none shadow-none py-0 gap-0 mb-6">
+              <CardHeader className="px-6 py-4 border-b border-border flex-row items-center gap-2">
+                <Wallet className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm">
                   Compensation
-                </h2>
-              </div>
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                    Bi-weekly Salary (₹)
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
+                    Bi-weekly Salary (&#8377;)
                   </label>
-                  <input
+                  <Input
                     name="grossSalary"
                     type="number"
                     defaultValue={lokwasi.grossSalary}
                     required
                     min="0"
                     step="0.01"
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                    className="h-12"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                     TDS Rate (%)
                   </label>
-                  <input
+                  <Input
                     name="tdsRate"
                     type="number"
                     defaultValue={lokwasi.tdsRate}
                     min="0"
                     max="100"
                     step="0.01"
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                    className="h-12"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                     Leave Balance (Days)
                   </label>
-                  <input
+                  <Input
                     name="leaveBalance"
                     type="number"
                     defaultValue={lokwasi.leaveBalance}
                     min="0"
                     step="0.5"
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                    className="h-12"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                    Salary Debt Balance (₹)
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
+                    Salary Debt Balance (&#8377;)
                   </label>
-                  <input
+                  <Input
                     name="salaryDebtBalance"
                     type="number"
                     defaultValue={lokwasi.salaryDebtBalance}
                     min="0"
                     step="0.01"
-                    className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                    className="h-12"
                   />
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Actions */}
             <div className="flex items-center gap-4">
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-white font-medium hover:bg-[var(--devalok-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
+              <Button type="submit" disabled={isSaving} size="lg">
                 <Save className="w-4 h-4" />
                 {isSaving ? 'Saving...' : 'Save Changes'}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
+                size="lg"
                 onClick={() => setIsEditing(false)}
-                className="flex items-center gap-2 px-6 py-3 border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--muted)] transition-colors"
               >
                 <X className="w-4 h-4" />
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
         ) : (
           <div className="max-w-4xl">
             {/* Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-              <div className="bg-white p-4 border border-[var(--border)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  Bi-weekly Salary
-                </p>
-                <p className="text-xl font-semibold text-[var(--foreground)]">
-                  {formatCurrency(lokwasi.grossSalary)}
-                </p>
-              </div>
-              <div className="bg-white p-4 border border-[var(--border)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  TDS Rate
-                </p>
-                <p className="text-xl font-semibold text-[var(--foreground)]">
-                  {lokwasi.tdsRate}%
-                </p>
-              </div>
-              <div className="bg-white p-4 border border-[var(--border)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  Leave Balance
-                </p>
-                <p className="text-xl font-semibold text-[var(--foreground)]">
-                  {lokwasi.leaveBalance} days
-                </p>
-              </div>
-              <div className="bg-white p-4 border border-[var(--border)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  Salary Debt
-                </p>
-                <p className={`text-xl font-semibold ${lokwasi.salaryDebtBalance > 0 ? 'text-[var(--warning)]' : 'text-[var(--foreground)]'}`}>
-                  {formatCurrency(lokwasi.salaryDebtBalance)}
-                </p>
-              </div>
-              <div className={`p-4 border ${
-                lokwasi.accountBalance < 0
-                  ? 'bg-[var(--error-light)] border-[var(--error)]'
-                  : lokwasi.accountBalance > 0
-                  ? 'bg-[var(--success-light)] border-[var(--success)]'
-                  : 'bg-white border-[var(--border)]'
-              }`}>
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+              <Card className="rounded-none shadow-none py-0 gap-0">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    Bi-weekly Salary
+                  </p>
+                  <p className="text-xl font-semibold text-foreground">
+                    {formatCurrency(lokwasi.grossSalary)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-none shadow-none py-0 gap-0">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    TDS Rate
+                  </p>
+                  <p className="text-xl font-semibold text-foreground">
+                    {lokwasi.tdsRate}%
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-none shadow-none py-0 gap-0">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    Leave Balance
+                  </p>
+                  <p className="text-xl font-semibold text-foreground">
+                    {lokwasi.leaveBalance} days
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-none shadow-none py-0 gap-0">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    Salary Debt
+                  </p>
+                  <p className={`text-xl font-semibold ${lokwasi.salaryDebtBalance > 0 ? 'text-warning' : 'text-foreground'}`}>
+                    {formatCurrency(lokwasi.salaryDebtBalance)}
+                  </p>
+                </CardContent>
+              </Card>
+              <div className={`p-4 border ${getAccountBalanceClasses(lokwasi.accountBalance).container}`}>
+                <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
                   Account Balance
                 </p>
-                <p className={`text-xl font-semibold ${
-                  lokwasi.accountBalance < 0
-                    ? 'text-[var(--error)]'
-                    : lokwasi.accountBalance > 0
-                    ? 'text-[var(--success)]'
-                    : 'text-[var(--foreground)]'
-                }`}>
+                <p className={`text-xl font-semibold ${getAccountBalanceClasses(lokwasi.accountBalance).text}`}>
                   {lokwasi.accountBalance < 0 ? '-' : ''}{formatCurrency(Math.abs(lokwasi.accountBalance))}
                 </p>
-                <p className="text-xs text-[var(--muted-foreground)] mt-1">
-                  {lokwasi.accountBalance < 0
-                    ? 'Owes company'
-                    : lokwasi.accountBalance > 0
-                    ? 'Company owes'
-                    : 'Settled'}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {getAccountBalanceLabel(lokwasi.accountBalance)}
                 </p>
               </div>
             </div>
@@ -735,13 +741,12 @@ export default function LokwasiDetailPage({
             {/* Quick Actions */}
             {lokwasi.status === 'ACTIVE' && (
               <div className="flex items-center gap-3 mb-6">
-                <Link
-                  href={`/lokwasis/${lokwasi.id}/manual-payment`}
-                  className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white font-medium text-sm hover:bg-[var(--devalok-700)] transition-colors"
-                >
-                  <Banknote className="w-4 h-4" />
-                  Record Manual Payment
-                </Link>
+                <Button asChild>
+                  <Link href={`/lokwasis/${lokwasi.id}/manual-payment`}>
+                    <Banknote className="w-4 h-4" />
+                    Record Manual Payment
+                  </Link>
+                </Button>
               </div>
             )}
 
@@ -761,39 +766,39 @@ export default function LokwasiDetailPage({
             {/* Details Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               {/* Personal Information */}
-              <div className="bg-white border border-[var(--border)]">
-                <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                  <User className="w-4 h-4 text-[var(--muted-foreground)]" />
-                  <h2 className="text-sm font-semibold text-[var(--foreground)]">
+              <Card className="rounded-none shadow-none py-0 gap-0">
+                <CardHeader className="px-6 py-4 border-b border-border flex-row items-center gap-2">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm">
                     Personal Information
-                  </h2>
-                </div>
-                <div className="p-6 space-y-4">
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
                   <div>
-                    <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+                    <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
                       PAN Number
                     </p>
-                    <p className="text-[var(--foreground)] font-mono">{lokwasi.pan}</p>
+                    <p className="text-foreground font-mono">{lokwasi.pan}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+                    <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
                       Aadhaar Number
                     </p>
-                    <p className="text-[var(--foreground)] font-mono">
+                    <p className="text-foreground font-mono">
                       {maskAadhaar(lokwasi.aadhaar)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+                    <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
                       Nature of Work
                     </p>
-                    <p className="text-[var(--foreground)]">{lokwasi.natureOfWork}</p>
+                    <p className="text-foreground">{lokwasi.natureOfWork}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+                    <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
                       Joined Date
                     </p>
-                    <p className="text-[var(--foreground)]">
+                    <p className="text-foreground">
                       {new Date(lokwasi.joinedDate).toLocaleDateString('en-IN', {
                         day: 'numeric',
                         month: 'long',
@@ -801,129 +806,127 @@ export default function LokwasiDetailPage({
                       })}
                     </p>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Bank Details */}
-              <div className="bg-white border border-[var(--border)]">
-                <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-[var(--muted-foreground)]" />
-                  <h2 className="text-sm font-semibold text-[var(--foreground)]">
+              <Card className="rounded-none shadow-none py-0 gap-0">
+                <CardHeader className="px-6 py-4 border-b border-border flex-row items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm">
                     Bank Details
-                  </h2>
-                </div>
-                <div className="p-6 space-y-4">
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
                   <div>
-                    <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+                    <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
                       Bank Name
                     </p>
-                    <p className="text-[var(--foreground)]">
+                    <p className="text-foreground">
                       {lokwasi.bankName}
                       {lokwasi.isAxisBank && (
-                        <span className="ml-2 text-xs px-1.5 py-0.5 bg-[var(--info)] text-white">
-                          AXIS
-                        </span>
+                        <Badge variant="info" className="ml-2">AXIS</Badge>
                       )}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+                    <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
                       Account Number
                     </p>
-                    <p className="text-[var(--foreground)] font-mono">
+                    <p className="text-foreground font-mono">
                       {maskBankAccount(lokwasi.bankAccount)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+                    <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
                       IFSC Code
                     </p>
-                    <p className="text-[var(--foreground)] font-mono">{lokwasi.ifscCode}</p>
+                    <p className="text-foreground font-mono">{lokwasi.ifscCode}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+                    <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
                       Beneficiary Nickname
                     </p>
-                    <p className="text-[var(--foreground)] font-mono">
+                    <p className="text-foreground font-mono">
                       {lokwasi.beneficiaryNickname}
                     </p>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Debt Breakdown */}
             {lokwasi.salaryDebtBalance > 0 && (
-              <div className="bg-white border border-[var(--border)] mb-6">
-                <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                  <Banknote className="w-4 h-4 text-[var(--warning)]" />
-                  <h2 className="text-sm font-semibold text-[var(--foreground)]">
+              <Card className="rounded-none shadow-none py-0 gap-0 mb-6">
+                <CardHeader className="px-6 py-4 border-b border-border flex-row items-center gap-2">
+                  <Banknote className="w-4 h-4 text-warning" />
+                  <CardTitle className="text-sm">
                     Debt Breakdown
-                  </h2>
-                </div>
-                <div className="p-6">
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
                   {/* Debt by source */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     {debtBreakdown.SALARY && debtBreakdown.SALARY > 0 && (
-                      <div className="p-4 bg-[var(--muted)] border border-[var(--border)]">
+                      <div className="p-4 bg-muted border border-border">
                         <div className="flex items-center gap-2 mb-2">
-                          <Landmark className="w-4 h-4 text-[var(--muted-foreground)]" />
-                          <span className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)]">
+                          <Landmark className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
                             Salary
                           </span>
                         </div>
-                        <p className="text-lg font-semibold text-[var(--warning)]">
+                        <p className="text-lg font-semibold text-warning">
                           {formatCurrency(debtBreakdown.SALARY)}
                         </p>
-                        <p className="text-xs text-[var(--muted-foreground)]">
+                        <p className="text-xs text-muted-foreground">
                           From proprietorship
                         </p>
                       </div>
                     )}
                     {debtBreakdown.LEAVE_CASHOUT && debtBreakdown.LEAVE_CASHOUT > 0 && (
-                      <div className="p-4 bg-[var(--muted)] border border-[var(--border)]">
+                      <div className="p-4 bg-muted border border-border">
                         <div className="flex items-center gap-2 mb-2">
-                          <Calendar className="w-4 h-4 text-[var(--muted-foreground)]" />
-                          <span className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)]">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
                             Leave Cashout
                           </span>
                         </div>
-                        <p className="text-lg font-semibold text-[var(--warning)]">
+                        <p className="text-lg font-semibold text-warning">
                           {formatCurrency(debtBreakdown.LEAVE_CASHOUT)}
                         </p>
-                        <p className="text-xs text-[var(--muted-foreground)]">
+                        <p className="text-xs text-muted-foreground">
                           Pending encashment
                         </p>
                       </div>
                     )}
                     {debtBreakdown.BONUS && debtBreakdown.BONUS > 0 && (
-                      <div className="p-4 bg-[var(--muted)] border border-[var(--border)]">
+                      <div className="p-4 bg-muted border border-border">
                         <div className="flex items-center gap-2 mb-2">
-                          <Gift className="w-4 h-4 text-[var(--muted-foreground)]" />
-                          <span className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)]">
+                          <Gift className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
                             Bonus
                           </span>
                         </div>
-                        <p className="text-lg font-semibold text-[var(--warning)]">
+                        <p className="text-lg font-semibold text-warning">
                           {formatCurrency(debtBreakdown.BONUS)}
                         </p>
-                        <p className="text-xs text-[var(--muted-foreground)]">
+                        <p className="text-xs text-muted-foreground">
                           Pending bonus
                         </p>
                       </div>
                     )}
                     {debtBreakdown.OTHER && debtBreakdown.OTHER > 0 && (
-                      <div className="p-4 bg-[var(--muted)] border border-[var(--border)]">
+                      <div className="p-4 bg-muted border border-border">
                         <div className="flex items-center gap-2 mb-2">
-                          <HelpCircle className="w-4 h-4 text-[var(--muted-foreground)]" />
-                          <span className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)]">
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
                             Other
                           </span>
                         </div>
-                        <p className="text-lg font-semibold text-[var(--warning)]">
+                        <p className="text-lg font-semibold text-warning">
                           {formatCurrency(debtBreakdown.OTHER)}
                         </p>
-                        <p className="text-xs text-[var(--muted-foreground)]">
+                        <p className="text-xs text-muted-foreground">
                           Miscellaneous
                         </p>
                       </div>
@@ -931,18 +934,18 @@ export default function LokwasiDetailPage({
                   </div>
 
                   {/* Summary */}
-                  <div className="flex items-center justify-between p-4 bg-[var(--warning-light)] border border-[var(--warning)]/20">
+                  <div className="flex items-center justify-between p-4 bg-warning-light border border-warning/20">
                     <div>
-                      <p className="text-sm font-medium text-[var(--foreground)]">
+                      <p className="text-sm font-medium text-foreground">
                         Total Outstanding Debt
                       </p>
                       {debtBreakdown.paid && debtBreakdown.paid > 0 && (
-                        <p className="text-xs text-[var(--muted-foreground)]">
+                        <p className="text-xs text-muted-foreground">
                           Total added: {formatCurrency(debtBreakdown.total || 0)} | Paid off: {formatCurrency(debtBreakdown.paid)}
                         </p>
                       )}
                     </div>
-                    <p className="text-xl font-semibold text-[var(--warning)]">
+                    <p className="text-xl font-semibold text-warning">
                       {formatCurrency(lokwasi.salaryDebtBalance)}
                     </p>
                   </div>
@@ -950,22 +953,22 @@ export default function LokwasiDetailPage({
                   {/* Debt payment history */}
                   {debtPayments.length > 0 && (
                     <div className="mt-6">
-                      <h3 className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-3">
+                      <h3 className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-3">
                         Debt Transaction History
                       </h3>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                         {debtPayments.map((dp) => (
                           <div
                             key={dp.id}
-                            className="flex items-center justify-between py-2 px-3 bg-[var(--muted)] text-sm"
+                            className="flex items-center justify-between py-2 px-3 bg-muted text-sm"
                           >
                             <div className="flex items-center gap-3">
                               <span
                                 className={`w-2 h-2 rounded-full ${
-                                  dp.isAddition ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'
+                                  dp.isAddition ? 'bg-warning' : 'bg-success'
                                 }`}
                               />
-                              <span className="text-[var(--foreground)]">
+                              <span className="text-foreground">
                                 {dp.isAddition ? 'Added' : 'Paid'}: {dp.source.replace('_', ' ')}
                                 {dp.sourceYear && ` (${dp.sourceYear})`}
                               </span>
@@ -973,12 +976,12 @@ export default function LokwasiDetailPage({
                             <div className="text-right">
                               <span
                                 className={`font-medium ${
-                                  dp.isAddition ? 'text-[var(--warning)]' : 'text-[var(--success)]'
+                                  dp.isAddition ? 'text-warning' : 'text-success'
                                 }`}
                               >
                                 {dp.isAddition ? '+' : '-'}{formatCurrency(dp.amount)}
                               </span>
-                              <p className="text-xs text-[var(--muted-foreground)]">
+                              <p className="text-xs text-muted-foreground">
                                 {formatDate(dp.paymentDate)}
                               </p>
                             </div>
@@ -987,125 +990,119 @@ export default function LokwasiDetailPage({
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Payment History */}
-            <div className="bg-white border border-[var(--border)]">
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                <History className="w-4 h-4 text-[var(--muted-foreground)]" />
-                <h2 className="text-sm font-semibold text-[var(--foreground)]">
+            <Card className="rounded-none shadow-none py-0 gap-0">
+              <CardHeader className="px-6 py-4 border-b border-border flex-row items-center gap-2">
+                <History className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm">
                   Payment History
-                </h2>
-              </div>
+                </CardTitle>
+              </CardHeader>
               {payments.length === 0 ? (
-                <div className="p-6 text-center">
-                  <FileText className="w-12 h-12 mx-auto mb-4 text-[var(--muted-foreground)]" />
-                  <p className="text-[var(--muted-foreground)]">No payments yet</p>
-                </div>
+                <CardContent className="p-6 text-center">
+                  <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">No payments yet</p>
+                </CardContent>
               ) : (
-                <div className="divide-y divide-[var(--border)]">
-                  {payments.map((payment) => (
-                    <div
-                      key={payment.id}
-                      className="px-6 py-4 flex items-center justify-between"
-                    >
-                      <div>
-                        <p className="font-medium text-[var(--foreground)]">
-                          {new Date(payment.payrollRun.runDate).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
-                        </p>
-                        <div className="flex items-center gap-4 mt-1 text-xs text-[var(--muted-foreground)]">
-                          <span>Gross: {formatCurrency(payment.grossAmount)}</span>
-                          <span>TDS: {formatCurrency(payment.tdsAmount)}</span>
-                          {payment.leaveCashoutAmount > 0 && (
-                            <span className="text-[var(--success)]">
-                              +Leave: {formatCurrency(payment.leaveCashoutAmount)}
-                            </span>
-                          )}
-                          {payment.debtPayoutAmount > 0 && (
-                            <span className="text-[var(--warning)]">
-                              +Debt: {formatCurrency(payment.debtPayoutAmount)}
-                            </span>
-                          )}
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border">
+                    {payments.map((payment) => (
+                      <div
+                        key={payment.id}
+                        className="px-6 py-4 flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {new Date(payment.payrollRun.runDate).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </p>
+                          <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                            <span>Gross: {formatCurrency(payment.grossAmount)}</span>
+                            <span>TDS: {formatCurrency(payment.tdsAmount)}</span>
+                            {payment.leaveCashoutAmount > 0 && (
+                              <span className="text-success">
+                                +Leave: {formatCurrency(payment.leaveCashoutAmount)}
+                              </span>
+                            )}
+                            {payment.debtPayoutAmount > 0 && (
+                              <span className="text-warning">
+                                +Debt: {formatCurrency(payment.debtPayoutAmount)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-foreground">
+                            {formatCurrency(payment.netAmount)}
+                          </p>
+                          <StatusBadge status={payment.paymentStatus} />
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-[var(--foreground)]">
-                          {formatCurrency(payment.netAmount)}
-                        </p>
-                        <span
-                          className={`text-xs font-medium px-2 py-0.5 ${
-                            payment.paymentStatus === 'PAID'
-                              ? 'bg-[var(--success-light)] text-[var(--success)]'
-                              : payment.paymentStatus === 'FAILED'
-                              ? 'bg-[var(--error-light)] text-[var(--error)]'
-                              : 'bg-[var(--warning-light)] text-[var(--warning)]'
-                          }`}
-                        >
-                          {payment.paymentStatus}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </CardContent>
               )}
-            </div>
+            </Card>
 
             {/* Account Statement */}
             {accountTransactions.length > 0 && (
-              <div className="bg-white border border-[var(--border)] mt-6">
-                <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                  <Wallet className="w-4 h-4 text-[var(--muted-foreground)]" />
-                  <h2 className="text-sm font-semibold text-[var(--foreground)]">
+              <Card className="rounded-none shadow-none py-0 gap-0 mt-6">
+                <CardHeader className="px-6 py-4 border-b border-border flex-row items-center gap-2">
+                  <Wallet className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm">
                     Account Statement
-                  </h2>
-                </div>
-                <div className="divide-y divide-[var(--border)]">
-                  {accountTransactions.map((txn) => (
-                    <div
-                      key={txn.id}
-                      className="px-6 py-4 flex items-center justify-between"
-                    >
-                      <div>
-                        <p className="font-medium text-[var(--foreground)]">
-                          {txn.description}
-                        </p>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-[var(--muted-foreground)]">
-                          <span>{formatDate(txn.transactionDate)}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {txn.category.replace(/_/g, ' ')}
-                          </Badge>
-                          {txn.isTaxable && txn.tdsAmount && (
-                            <span>TDS: {formatCurrency(txn.tdsAmount)}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border">
+                    {accountTransactions.map((txn) => (
+                      <div
+                        key={txn.id}
+                        className="px-6 py-4 flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {txn.description}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span>{formatDate(txn.transactionDate)}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {txn.category.replace(/_/g, ' ')}
+                            </Badge>
+                            {txn.isTaxable && txn.tdsAmount && (
+                              <span>TDS: {formatCurrency(txn.tdsAmount)}</span>
+                            )}
+                          </div>
+                          {txn.notes && (
+                            <p className="text-xs text-muted-foreground mt-1">{txn.notes}</p>
                           )}
                         </div>
-                        {txn.notes && (
-                          <p className="text-xs text-[var(--muted-foreground)] mt-1">{txn.notes}</p>
-                        )}
+                        <div className="text-right">
+                          <p className={`font-semibold ${
+                            txn.type === 'CREDIT' ? 'text-success' : 'text-error'
+                          }`}>
+                            {txn.type === 'CREDIT' ? '+' : '-'}{formatCurrency(txn.amount)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Bal: {txn.balanceAfter < 0 ? '-' : ''}{formatCurrency(Math.abs(txn.balanceAfter))}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className={`font-semibold ${
-                          txn.type === 'CREDIT' ? 'text-[var(--success)]' : 'text-[var(--error)]'
-                        }`}>
-                          {txn.type === 'CREDIT' ? '+' : '-'}{formatCurrency(txn.amount)}
-                        </p>
-                        <p className="text-xs text-[var(--muted-foreground)]">
-                          Bal: {txn.balanceAfter < 0 ? '-' : ''}{formatCurrency(Math.abs(txn.balanceAfter))}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Metadata */}
-            <div className="mt-6 flex items-center gap-6 text-xs text-[var(--muted-foreground)]">
+            <div className="mt-6 flex items-center gap-6 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 Created: {new Date(lokwasi.createdAt).toLocaleDateString('en-IN')}

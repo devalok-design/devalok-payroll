@@ -16,6 +16,34 @@
   --devalok-800: #932044;
   --devalok-900: #712846;
   --devalok-950: #3F181E;
+  --devalok-995: #120C0C;
+  --devalok-1000: #0C0808;
+
+  /* Purple Scale (brand.md) */
+  --purple-50: #F8F6FC;
+  --purple-100: #F2EFF8;
+  --purple-200: #E6E1F3;
+  --purple-300: #D3C8EA;
+  --purple-400: #AB9DED;
+  --purple-500: #9E7DC9;
+  --purple-600: #946ABD;
+  --purple-700: #8258A9;
+  --purple-800: #6D498E;
+  --purple-900: #5A3D75;
+  --purple-950: #3A274E;
+
+  /* Blue Scale (brand.md) */
+  --blue-50: #F1F8FE;
+  --blue-100: #E2F1FC;
+  --blue-200: #BEE2F9;
+  --blue-300: #84CCF5;
+  --blue-400: #43B2ED;
+  --blue-500: #1A98DD;
+  --blue-600: #0D79BC;
+  --blue-700: #0C6098;
+  --blue-800: #0E527E;
+  --blue-900: #114569;
+  --blue-950: #0C2C45;
 
   /* Neutrals */
   --neutral-0: #FFFFFF;
@@ -40,6 +68,8 @@
   --error-light: #fee2e2;
   --info: #43B2ED;
   --info-light: #dbeafe;
+  --highlight: var(--purple-500);
+  --highlight-light: var(--purple-100);
 
   /* shadcn Theme Variables - Light Mode */
   --radius: 0.25rem;
@@ -153,6 +183,32 @@
   --color-devalok-900: var(--devalok-900);
   --color-devalok-950: var(--devalok-950);
 
+  /* Purple Scale */
+  --color-purple-50: var(--purple-50);
+  --color-purple-100: var(--purple-100);
+  --color-purple-200: var(--purple-200);
+  --color-purple-300: var(--purple-300);
+  --color-purple-400: var(--purple-400);
+  --color-purple-500: var(--purple-500);
+  --color-purple-600: var(--purple-600);
+  --color-purple-700: var(--purple-700);
+  --color-purple-800: var(--purple-800);
+  --color-purple-900: var(--purple-900);
+  --color-purple-950: var(--purple-950);
+
+  /* Blue Scale */
+  --color-blue-50: var(--blue-50);
+  --color-blue-100: var(--blue-100);
+  --color-blue-200: var(--blue-200);
+  --color-blue-300: var(--blue-300);
+  --color-blue-400: var(--blue-400);
+  --color-blue-500: var(--blue-500);
+  --color-blue-600: var(--blue-600);
+  --color-blue-700: var(--blue-700);
+  --color-blue-800: var(--blue-800);
+  --color-blue-900: var(--blue-900);
+  --color-blue-950: var(--blue-950);
+
   /* Semantic Colors */
   --color-success: var(--success);
   --color-success-light: var(--success-light);
@@ -162,6 +218,8 @@
   --color-error-light: var(--error-light);
   --color-info: var(--info);
   --color-info-light: var(--info-light);
+  --color-highlight: var(--highlight);
+  --color-highlight-light: var(--highlight-light);
 
   /* Radius - Small rounded corners */
   --radius-sm: calc(var(--radius) - 2px);
@@ -204,8 +262,8 @@
   background: var(--neutral-500);
 }
 
-/* Selection color */
+/* Selection color — brand highlight (purple) per brand.md */
 ::selection {
-  background: var(--devalok-200);
+  background: var(--purple-200);
   color: var(--neutral-900);
 }

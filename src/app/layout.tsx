@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 const inter = Inter({
@@ -11,8 +12,8 @@ export const metadata: Metadata = {
   title: 'Devalok Payroll',
   description: 'Payroll Management System for Devalok',
   icons: {
-    icon: 'https://cdn.jsdelivr.net/gh/devalok-design/devalok-brand-assets@main/Favicon/COLOR/PNG/Favicon_COLOR%20(32%20pt).png',
-    apple: 'https://cdn.jsdelivr.net/gh/devalok-design/devalok-brand-assets@main/Favicon/COLOR/PNG/Favicon_COLOR%20(180%20pt).png',
+    icon: '/brand/favicon-32.png',
+    apple: '/brand/favicon-180.png',
   },
 }
 
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
         {children}
+        <Toaster />
       </body>
     </html>
   )

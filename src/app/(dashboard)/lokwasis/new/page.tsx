@@ -4,6 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { ArrowLeft, Save } from 'lucide-react'
 import { INDIAN_BANKS, isAxisBankIFSC, getBankFromIFSC } from '@/lib/constants/banks'
 
@@ -89,7 +93,7 @@ export default function NewLokwasiPage() {
         {/* Back link */}
         <Link
           href="/lokwasis"
-          className="inline-flex items-center gap-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] mb-6"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Lokwasis
@@ -97,289 +101,288 @@ export default function NewLokwasiPage() {
 
         <form onSubmit={handleSubmit} className="max-w-3xl">
           {errors.general && (
-            <div className="mb-6 p-4 bg-[var(--error-light)] border border-[var(--error)] text-[var(--error)]">
+            <div className="mb-6 p-4 bg-error-light border border-error text-error">
               {errors.general}
             </div>
           )}
 
           {/* Personal Information */}
-          <div className="bg-white border border-[var(--border)] mb-6">
-            <div className="px-6 py-4 border-b border-[var(--border)]">
-              <h2 className="text-sm font-semibold text-[var(--foreground)]">
+          <Card className="mb-6 gap-0 rounded-none py-0 shadow-none">
+            <CardHeader className="border-b px-6 py-4">
+              <CardTitle className="text-sm">
                 Personal Information
-              </h2>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  Full Name *
-                </label>
-                <input
-                  name="name"
-                  type="text"
-                  required
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                  placeholder="e.g., Yogin Naidu"
-                />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-[var(--error)]">{errors.name}</p>
-                )}
-              </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    Full Name *
+                  </Label>
+                  <Input
+                    name="name"
+                    type="text"
+                    required
+                    className="h-12"
+                    placeholder="e.g., Yogin Naidu"
+                  />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-error">{errors.name}</p>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  PAN Number *
-                </label>
-                <input
-                  name="pan"
-                  type="text"
-                  required
-                  maxLength={10}
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)] uppercase"
-                  placeholder="AAAAA0000A"
-                />
-                {errors.pan && (
-                  <p className="mt-1 text-sm text-[var(--error)]">{errors.pan}</p>
-                )}
-              </div>
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    PAN Number *
+                  </Label>
+                  <Input
+                    name="pan"
+                    type="text"
+                    required
+                    maxLength={10}
+                    className="h-12 uppercase"
+                    placeholder="AAAAA0000A"
+                  />
+                  {errors.pan && (
+                    <p className="mt-1 text-sm text-error">{errors.pan}</p>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  Aadhaar Number *
-                </label>
-                <input
-                  name="aadhaar"
-                  type="text"
-                  required
-                  maxLength={14}
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                  placeholder="0000 0000 0000"
-                />
-                {errors.aadhaar && (
-                  <p className="mt-1 text-sm text-[var(--error)]">{errors.aadhaar}</p>
-                )}
-              </div>
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    Aadhaar Number *
+                  </Label>
+                  <Input
+                    name="aadhaar"
+                    type="text"
+                    required
+                    maxLength={14}
+                    className="h-12"
+                    placeholder="0000 0000 0000"
+                  />
+                  {errors.aadhaar && (
+                    <p className="mt-1 text-sm text-error">{errors.aadhaar}</p>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  Joined Date *
-                </label>
-                <input
-                  name="joinedDate"
-                  type="date"
-                  required
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                />
-              </div>
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    Joined Date *
+                  </Label>
+                  <Input
+                    name="joinedDate"
+                    type="date"
+                    required
+                    className="h-12"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  Nature of Work
-                </label>
-                <input
-                  name="natureOfWork"
-                  type="text"
-                  defaultValue="Professional Services"
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                />
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    Nature of Work
+                  </Label>
+                  <Input
+                    name="natureOfWork"
+                    type="text"
+                    defaultValue="Professional Services"
+                    className="h-12"
+                  />
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Bank Details */}
-          <div className="bg-white border border-[var(--border)] mb-6">
-            <div className="px-6 py-4 border-b border-[var(--border)]">
-              <h2 className="text-sm font-semibold text-[var(--foreground)]">
+          <Card className="mb-6 gap-0 rounded-none py-0 shadow-none">
+            <CardHeader className="border-b px-6 py-4">
+              <CardTitle className="text-sm">
                 Bank Details
-              </h2>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  IFSC Code *
-                </label>
-                <input
-                  name="ifscCode"
-                  type="text"
-                  required
-                  maxLength={11}
-                  value={ifscCode}
-                  onChange={handleIfscChange}
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)] uppercase"
-                  placeholder="e.g., SBIN0009019"
-                />
-                {errors.ifscCode && (
-                  <p className="mt-1 text-sm text-[var(--error)]">{errors.ifscCode}</p>
-                )}
-                {isAxisBank && (
-                  <p className="mt-1 text-xs text-[var(--success)]">
-                    Axis Bank detected - will use within-bank transfer
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  Bank Name *
-                </label>
-                <select
-                  name="bankName"
-                  required
-                  value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                >
-                  <option value="">Select a bank</option>
-                  {INDIAN_BANKS.map((bank) => (
-                    <option key={bank} value={bank}>
-                      {bank}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  Account Number *
-                </label>
-                <input
-                  name="bankAccount"
-                  type="text"
-                  required
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                  placeholder="e.g., 30209006571"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  Beneficiary Nickname *
-                </label>
-                <input
-                  name="beneficiaryNickname"
-                  type="text"
-                  required
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)] uppercase"
-                  placeholder="e.g., YOGINNAIDU"
-                />
-                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                  Used in bank payment templates (no spaces)
-                </p>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    name="isAxisBank"
-                    type="checkbox"
-                    checked={isAxisBank}
-                    onChange={(e) => setIsAxisBank(e.target.checked)}
-                    className="w-5 h-5 border border-[var(--border)] accent-[var(--primary)]"
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    IFSC Code *
+                  </Label>
+                  <Input
+                    name="ifscCode"
+                    type="text"
+                    required
+                    maxLength={11}
+                    value={ifscCode}
+                    onChange={handleIfscChange}
+                    className="h-12 uppercase"
+                    placeholder="e.g., SBIN0009019"
                   />
-                  <span className="text-sm text-[var(--foreground)]">
-                    This is an Axis Bank account
-                  </span>
-                </label>
-                <p className="mt-1 ml-8 text-xs text-[var(--muted-foreground)]">
-                  Auto-detected from IFSC code (UTIB prefix). Override if needed.
-                </p>
+                  {errors.ifscCode && (
+                    <p className="mt-1 text-sm text-error">{errors.ifscCode}</p>
+                  )}
+                  {isAxisBank && (
+                    <p className="mt-1 text-xs text-success">
+                      Axis Bank detected - will use within-bank transfer
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    Bank Name *
+                  </Label>
+                  <select
+                    name="bankName"
+                    required
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    className="w-full px-4 py-3 border border-border bg-white focus:outline-none focus:border-primary"
+                  >
+                    <option value="">Select a bank</option>
+                    {INDIAN_BANKS.map((bank) => (
+                      <option key={bank} value={bank}>
+                        {bank}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    Account Number *
+                  </Label>
+                  <Input
+                    name="bankAccount"
+                    type="text"
+                    required
+                    className="h-12"
+                    placeholder="e.g., 30209006571"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    Beneficiary Nickname *
+                  </Label>
+                  <Input
+                    name="beneficiaryNickname"
+                    type="text"
+                    required
+                    className="h-12 uppercase"
+                    placeholder="e.g., YOGINNAIDU"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Used in bank payment templates (no spaces)
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      name="isAxisBank"
+                      type="checkbox"
+                      checked={isAxisBank}
+                      onChange={(e) => setIsAxisBank(e.target.checked)}
+                      className="w-5 h-5 border border-border accent-primary"
+                    />
+                    <span className="text-sm text-foreground">
+                      This is an Axis Bank account
+                    </span>
+                  </label>
+                  <p className="mt-1 ml-8 text-xs text-muted-foreground">
+                    Auto-detected from IFSC code (UTIB prefix). Override if needed.
+                  </p>
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Compensation */}
-          <div className="bg-white border border-[var(--border)] mb-6">
-            <div className="px-6 py-4 border-b border-[var(--border)]">
-              <h2 className="text-sm font-semibold text-[var(--foreground)]">
+          <Card className="mb-6 gap-0 rounded-none py-0 shadow-none">
+            <CardHeader className="border-b px-6 py-4">
+              <CardTitle className="text-sm">
                 Compensation
-              </h2>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  Bi-weekly Salary (₹) *
-                </label>
-                <input
-                  name="grossSalary"
-                  type="number"
-                  required
-                  min="0"
-                  step="0.01"
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                  placeholder="e.g., 37500"
-                />
-                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                  Amount paid every 14 days
-                </p>
-              </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    Bi-weekly Salary (₹) *
+                  </Label>
+                  <Input
+                    name="grossSalary"
+                    type="number"
+                    required
+                    min="0"
+                    step="0.01"
+                    className="h-12"
+                    placeholder="e.g., 37500"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Amount paid every 14 days
+                  </p>
+                </div>
 
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  TDS Rate (%)
-                </label>
-                <input
-                  name="tdsRate"
-                  type="number"
-                  defaultValue="10"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                />
-              </div>
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    TDS Rate (%)
+                  </Label>
+                  <Input
+                    name="tdsRate"
+                    type="number"
+                    defaultValue="10"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="h-12"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  Leave Balance (Days)
-                </label>
-                <input
-                  name="leaveBalance"
-                  type="number"
-                  defaultValue="0"
-                  min="0"
-                  step="0.5"
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                />
-                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                  Carried over from previous year
-                </p>
-              </div>
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    Leave Balance (Days)
+                  </Label>
+                  <Input
+                    name="leaveBalance"
+                    type="number"
+                    defaultValue="0"
+                    min="0"
+                    step="0.5"
+                    className="h-12"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Carried over from previous year
+                  </p>
+                </div>
 
-              <div>
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
-                  Salary Debt Balance (₹)
-                </label>
-                <input
-                  name="salaryDebtBalance"
-                  type="number"
-                  defaultValue="0"
-                  min="0"
-                  step="0.01"
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
-                />
-                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                  Pending salary from proprietorship transition
-                </p>
+                <div>
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    Salary Debt Balance (₹)
+                  </Label>
+                  <Input
+                    name="salaryDebtBalance"
+                    type="number"
+                    defaultValue="0"
+                    min="0"
+                    step="0.01"
+                    className="h-12"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Pending salary from proprietorship transition
+                  </p>
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Actions */}
           <div className="flex items-center gap-4">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-white font-medium hover:bg-[var(--devalok-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
+            <Button type="submit" disabled={isSubmitting}>
               <Save className="w-4 h-4" />
               {isSubmitting ? 'Saving...' : 'Save Lokwasi'}
-            </button>
-            <Link
-              href="/lokwasis"
-              className="px-6 py-3 border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--muted)] transition-colors"
-            >
-              Cancel
-            </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/lokwasis">Cancel</Link>
+            </Button>
           </div>
         </form>
       </main>

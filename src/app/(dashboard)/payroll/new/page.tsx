@@ -3,7 +3,20 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { Header } from '@/components/layout/Header'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { formatCurrency } from '@/lib/utils'
 import {
   ArrowLeft,
@@ -57,7 +70,6 @@ export default function NewPayrollPage() {
   const [lokwasis, setLokwasis] = useState<Lokwasi[]>([])
   const [payments, setPayments] = useState<PaymentCalculation[]>([])
   const [runDate, setRunDate] = useState(new Date().toISOString().split('T')[0])
-  const [error, setError] = useState('')
 
   useEffect(() => {
     fetchLokwasis()
@@ -123,7 +135,7 @@ export default function NewPayrollPage() {
       })
       setPayments(initialPayments)
     } catch (err) {
-      setError('Failed to load employees')
+      toast.error('Failed to load employees')
       console.error(err)
     } finally {
       setIsLoading(false)
@@ -220,12 +232,11 @@ export default function NewPayrollPage() {
 
   const handleCreate = async () => {
     if (includedPayments.length === 0) {
-      setError('Please include at least one employee')
+      toast.error('Please include at least one employee')
       return
     }
 
     setIsCreating(true)
-    setError('')
 
     try {
       const response = await fetch('/api/payroll', {
@@ -250,7 +261,7 @@ export default function NewPayrollPage() {
       router.push(`/payroll/${data.payrollRun.id}`)
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create payroll'
-      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsCreating(false)
     }
@@ -261,7 +272,7 @@ export default function NewPayrollPage() {
       <>
         <Header title="Off-Cycle Payroll" />
         <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </main>
       </>
     )
@@ -275,15 +286,15 @@ export default function NewPayrollPage() {
         {/* Back link */}
         <Link
           href="/payroll"
-          className="inline-flex items-center gap-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] mb-6"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Payroll
         </Link>
 
         {/* Info note */}
-        <div className="mb-6 p-4 bg-[var(--info-light)] border border-[var(--info)] text-sm text-[var(--neutral-700)]">
-          Use this for off-schedule payrolls. Routine payrolls are auto-generated every 14 days and can be reviewed from the <Link href="/payroll" className="underline text-[var(--primary)]">payroll list</Link>.
+        <div className="mb-6 p-4 bg-info-light border border-info text-sm text-neutral-700">
+          Use this for off-schedule payrolls. Routine payrolls are auto-generated every 14 days and can be reviewed from the <Link href="/payroll" className="underline text-primary">payroll list</Link>.
         </div>
 
         {/* Progress Steps */}
@@ -297,67 +308,58 @@ export default function NewPayrollPage() {
               <div
                 className={`w-8 h-8 flex items-center justify-center font-medium text-sm ${
                   step >= s.num
-                    ? 'bg-[var(--primary)] text-white'
-                    : 'bg-[var(--muted)] text-[var(--muted-foreground)]'
+                    ? 'bg-primary text-white'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {step > s.num ? <CheckCircle className="w-4 h-4" /> : s.num}
               </div>
               <span
                 className={`ml-2 text-sm ${
-                  step >= s.num ? 'text-[var(--foreground)]' : 'text-[var(--muted-foreground)]'
+                  step >= s.num ? 'text-foreground' : 'text-muted-foreground'
                 }`}
               >
                 {s.label}
               </span>
               {i < 2 && (
-                <ArrowRight className="w-4 h-4 mx-4 text-[var(--muted-foreground)]" />
+                <ArrowRight className="w-4 h-4 mx-4 text-muted-foreground" />
               )}
             </div>
           ))}
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-[var(--error-light)] border border-[var(--error)] text-[var(--error)]">
-            {error}
-          </div>
-        )}
-
         {/* Step 1: Select Date */}
         {step === 1 && (
           <div className="max-w-xl">
-            <div className="bg-white border border-[var(--border)]">
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[var(--muted-foreground)]" />
-                <h2 className="text-sm font-semibold text-[var(--foreground)]">
+            <Card className="rounded-none shadow-none py-0 gap-0">
+              <CardHeader className="flex-row items-center gap-2 border-b py-4 px-6">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold text-foreground">
                   Select Payroll Date
                 </h2>
-              </div>
-              <div className="p-6">
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+              </CardHeader>
+              <CardContent className="p-6">
+                <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                   Run Date
                 </label>
-                <input
+                <Input
                   type="date"
                   value={runDate}
                   onChange={(e) => handleRunDateChange(e.target.value)}
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                  className="h-12"
                 />
-                <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+                <p className="mt-2 text-sm text-muted-foreground">
                   This is the date the payroll will be processed. Pay period will be the 14 days
                   ending on this date.
                 </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setStep(2)}
-                className="flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-white font-medium hover:bg-[var(--devalok-700)] transition-colors"
-              >
+              <Button onClick={() => setStep(2)} size="lg">
                 Next
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -365,23 +367,23 @@ export default function NewPayrollPage() {
         {/* Step 2: Review Payments */}
         {step === 2 && (
           <div>
-            <div className="bg-white border border-[var(--border)] mb-6">
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+            <Card className="rounded-none shadow-none py-0 gap-0 mb-6">
+              <CardHeader className="flex-row items-center justify-between border-b py-4 px-6">
                 <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-[var(--muted-foreground)]" />
-                  <h2 className="text-sm font-semibold text-[var(--foreground)]">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <h2 className="text-sm font-semibold text-foreground">
                     Review & Adjust Payments
                   </h2>
                 </div>
-                <span className="text-sm text-[var(--muted-foreground)]">
+                <span className="text-sm text-muted-foreground">
                   {includedPayments.length} of {payments.length} employees selected
                 </span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-[var(--muted)] border-b border-[var(--border)]">
-                      <th className="px-4 py-3 text-left">
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted">
+                      <TableHead className="px-4 py-3">
                         <input
                           type="checkbox"
                           checked={includedPayments.length === payments.length}
@@ -390,78 +392,76 @@ export default function NewPayrollPage() {
                               prev.map((p) => ({ ...p, include: e.target.checked }))
                             )
                           }
-                          className="w-4 h-4 accent-[var(--primary)]"
+                          className="w-4 h-4 accent-primary"
                         />
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                      </TableHead>
+                      <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                         Employee
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                      </TableHead>
+                      <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                         Salary
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                      </TableHead>
+                      <TableHead className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                         Leave Cashout
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                      </TableHead>
+                      <TableHead className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                         Debt Payout
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                      </TableHead>
+                      <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                         TDS
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                      </TableHead>
+                      <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                         Recovery
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                      </TableHead>
+                      <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                         Net
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                      </TableHead>
+                      <TableHead className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                         Bank
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border)]">
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {payments.map((payment) => {
                       const lokwasi = lokwasis.find((l) => l.id === payment.lokwasiId)
                       return (
-                        <tr
+                        <TableRow
                           key={payment.lokwasiId}
-                          className={`${
-                            payment.include ? '' : 'bg-[var(--muted)] opacity-50'
-                          } transition-colors`}
+                          className={payment.include ? '' : 'bg-muted opacity-50'}
                         >
-                          <td className="px-4 py-4">
+                          <TableCell className="px-4 py-4">
                             <input
                               type="checkbox"
                               checked={payment.include}
                               onChange={(e) =>
                                 updatePayment(payment.lokwasiId, 'include', e.target.checked)
                               }
-                              className="w-4 h-4 accent-[var(--primary)]"
+                              className="w-4 h-4 accent-primary"
                             />
-                          </td>
-                          <td className="px-4 py-4">
-                            <p className="font-medium text-[var(--foreground)]">
+                          </TableCell>
+                          <TableCell className="px-4 py-4">
+                            <p className="font-medium text-foreground">
                               {payment.name}
                               {lokwasi?.status === 'TERMINATED' && (
-                                <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-[var(--error-light)] text-[var(--error)] font-medium">
+                                <Badge variant="destructive" className="ml-2 text-[10px]">
                                   TERMINATED
-                                </span>
+                                </Badge>
                               )}
                             </p>
-                            <p className="text-xs text-[var(--muted-foreground)]">
+                            <p className="text-xs text-muted-foreground">
                               {payment.employeeCode}
                             </p>
-                          </td>
-                          <td className="px-4 py-4 text-right font-medium text-[var(--foreground)]">
+                          </TableCell>
+                          <TableCell className="px-4 py-4 text-right font-medium text-foreground">
                             {formatCurrency(payment.grossSalary)}
-                          </td>
-                          <td className="px-4 py-4">
+                          </TableCell>
+                          <TableCell className="px-4 py-4">
                             <div className="flex items-center justify-center gap-2">
-                              <input
+                              <Input
                                 type="number"
-                                min="0"
+                                min={0}
                                 max={lokwasi?.leaveBalance || 0}
-                                step="0.5"
+                                step={0.5}
                                 value={payment.leaveCashoutDays}
                                 onChange={(e) =>
                                   updatePayment(
@@ -471,25 +471,25 @@ export default function NewPayrollPage() {
                                   )
                                 }
                                 disabled={!payment.include}
-                                className="w-16 px-2 py-1 border border-[var(--border)] text-center text-sm focus:outline-none focus:border-[var(--primary)] disabled:bg-[var(--muted)]"
+                                className="w-16 px-2 py-1 h-auto text-center text-sm"
                               />
-                              <span className="text-xs text-[var(--muted-foreground)]">
+                              <span className="text-xs text-muted-foreground">
                                 / {lokwasi?.leaveBalance || 0}
                               </span>
                             </div>
                             {payment.leaveCashoutAmount > 0 && (
-                              <p className="text-xs text-center text-[var(--success)] mt-1">
+                              <p className="text-xs text-center text-success mt-1">
                                 +{formatCurrency(payment.leaveCashoutAmount)}
                               </p>
                             )}
-                          </td>
-                          <td className="px-4 py-4">
+                          </TableCell>
+                          <TableCell className="px-4 py-4">
                             <div className="flex items-center justify-center gap-2">
-                              <input
+                              <Input
                                 type="number"
-                                min="0"
+                                min={0}
                                 max={lokwasi?.salaryDebtBalance || 0}
-                                step="100"
+                                step={100}
                                 value={payment.debtPayoutAmount}
                                 onChange={(e) =>
                                   updatePayment(
@@ -499,112 +499,114 @@ export default function NewPayrollPage() {
                                   )
                                 }
                                 disabled={!payment.include}
-                                className="w-24 px-2 py-1 border border-[var(--border)] text-center text-sm focus:outline-none focus:border-[var(--primary)] disabled:bg-[var(--muted)]"
+                                className="w-24 px-2 py-1 h-auto text-center text-sm"
                               />
                             </div>
                             {(lokwasi?.salaryDebtBalance || 0) > 0 && (
-                              <p className="text-xs text-center text-[var(--warning)] mt-1">
+                              <p className="text-xs text-center text-warning mt-1">
                                 {formatCurrency(lokwasi?.salaryDebtBalance || 0)} owed
                               </p>
                             )}
-                          </td>
-                          <td className="px-4 py-4 text-right text-sm text-[var(--muted-foreground)]">
+                          </TableCell>
+                          <TableCell className="px-4 py-4 text-right text-sm text-muted-foreground">
                             {formatCurrency(payment.tdsAmount)}
                             <p className="text-xs">({payment.tdsRate}%)</p>
-                          </td>
-                          <td className="px-4 py-4 text-right text-sm">
+                          </TableCell>
+                          <TableCell className="px-4 py-4 text-right text-sm">
                             {payment.accountDebitAmount > 0 ? (
-                              <span className="text-[var(--error)]">
+                              <span className="text-error">
                                 -{formatCurrency(payment.accountDebitAmount)}
-                                <span className="text-xs block text-[var(--muted-foreground)]">
+                                <span className="text-xs block text-muted-foreground">
                                   advance
                                 </span>
                               </span>
                             ) : (
-                              <span className="text-[var(--muted-foreground)]">-</span>
+                              <span className="text-muted-foreground">-</span>
                             )}
-                          </td>
-                          <td className="px-4 py-4 text-right font-semibold text-[var(--foreground)]">
+                          </TableCell>
+                          <TableCell className="px-4 py-4 text-right font-semibold text-foreground">
                             {formatCurrency(payment.netAmount)}
-                          </td>
-                          <td className="px-4 py-4 text-center">
+                          </TableCell>
+                          <TableCell className="px-4 py-4 text-center">
                             {payment.isAxisBank ? (
-                              <span className="text-xs px-1.5 py-0.5 bg-[var(--info)] text-white">
-                                AXIS
-                              </span>
+                              <Badge variant="info">AXIS</Badge>
                             ) : (
-                              <span className="text-xs text-[var(--muted-foreground)]">
+                              <span className="text-xs text-muted-foreground">
                                 NEFT
                               </span>
                             )}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )
                     })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
 
             {/* Totals */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-              <div className="bg-white p-4 border border-[var(--border)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  Total Gross
-                </p>
-                <p className="text-xl font-semibold text-[var(--foreground)]">
-                  {formatCurrency(totals.totalGross)}
-                </p>
-              </div>
-              <div className="bg-white p-4 border border-[var(--border)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  Leave Cashout
-                </p>
-                <p className="text-xl font-semibold text-[var(--success)]">
-                  {formatCurrency(totals.totalLeaveCashout)}
-                </p>
-              </div>
-              <div className="bg-white p-4 border border-[var(--border)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  Debt Payout
-                </p>
-                <p className="text-xl font-semibold text-[var(--warning)]">
-                  {formatCurrency(totals.totalDebtPayout)}
-                </p>
-              </div>
-              <div className="bg-white p-4 border border-[var(--border)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  Total TDS
-                </p>
-                <p className="text-xl font-semibold text-[var(--muted-foreground)]">
-                  {formatCurrency(totals.totalTds)}
-                </p>
-              </div>
-              <div className="bg-white p-4 border border-[var(--border)] border-[var(--primary)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  Net Payout
-                </p>
-                <p className="text-xl font-semibold text-[var(--primary)]">
-                  {formatCurrency(totals.totalNet)}
-                </p>
-              </div>
+              <Card className="rounded-none shadow-none py-0 gap-0">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    Total Gross
+                  </p>
+                  <p className="text-xl font-semibold text-foreground">
+                    {formatCurrency(totals.totalGross)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-none shadow-none py-0 gap-0">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    Leave Cashout
+                  </p>
+                  <p className="text-xl font-semibold text-success">
+                    {formatCurrency(totals.totalLeaveCashout)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-none shadow-none py-0 gap-0">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    Debt Payout
+                  </p>
+                  <p className="text-xl font-semibold text-warning">
+                    {formatCurrency(totals.totalDebtPayout)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-none shadow-none py-0 gap-0">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    Total TDS
+                  </p>
+                  <p className="text-xl font-semibold text-muted-foreground">
+                    {formatCurrency(totals.totalTds)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-none shadow-none py-0 gap-0 border-primary">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    Net Payout
+                  </p>
+                  <p className="text-xl font-semibold text-primary">
+                    {formatCurrency(totals.totalNet)}
+                  </p>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="flex justify-between">
-              <button
-                onClick={() => setStep(1)}
-                className="flex items-center gap-2 px-6 py-3 border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--muted)] transition-colors"
-              >
+              <Button variant="outline" size="lg" onClick={() => setStep(1)}>
                 <ArrowLeft className="w-4 h-4" />
                 Back
-              </button>
-              <button
-                onClick={() => setStep(3)}
-                className="flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-white font-medium hover:bg-[var(--devalok-700)] transition-colors"
-              >
+              </Button>
+              <Button size="lg" onClick={() => setStep(3)}>
                 Next
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -612,17 +614,17 @@ export default function NewPayrollPage() {
         {/* Step 3: Confirm */}
         {step === 3 && (
           <div className="max-w-2xl">
-            <div className="bg-white border border-[var(--border)] mb-6">
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-[var(--success)]" />
-                <h2 className="text-sm font-semibold text-[var(--foreground)]">
+            <Card className="rounded-none shadow-none py-0 gap-0 mb-6">
+              <CardHeader className="flex-row items-center gap-2 border-b py-4 px-6">
+                <CheckCircle className="w-4 h-4 text-success" />
+                <h2 className="text-sm font-semibold text-foreground">
                   Confirm Payroll Run
                 </h2>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                  <span className="text-[var(--muted-foreground)]">Run Date</span>
-                  <span className="font-medium text-[var(--foreground)]">
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Run Date</span>
+                  <span className="font-medium text-foreground">
                     {new Date(runDate).toLocaleDateString('en-IN', {
                       weekday: 'long',
                       day: 'numeric',
@@ -631,47 +633,47 @@ export default function NewPayrollPage() {
                     })}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                  <span className="text-[var(--muted-foreground)]">Employees</span>
-                  <span className="font-medium text-[var(--foreground)]">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Employees</span>
+                  <span className="font-medium text-foreground">
                     {includedPayments.length}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                  <span className="text-[var(--muted-foreground)]">Total Gross</span>
-                  <span className="font-medium text-[var(--foreground)]">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Total Gross</span>
+                  <span className="font-medium text-foreground">
                     {formatCurrency(totals.totalGross)}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                  <span className="text-[var(--muted-foreground)]">Total TDS</span>
-                  <span className="font-medium text-[var(--foreground)]">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Total TDS</span>
+                  <span className="font-medium text-foreground">
                     {formatCurrency(totals.totalTds)}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                  <span className="text-[var(--muted-foreground)]">Leave Cashout</span>
-                  <span className="font-medium text-[var(--success)]">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Leave Cashout</span>
+                  <span className="font-medium text-success">
                     {formatCurrency(totals.totalLeaveCashout)}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                  <span className="text-[var(--muted-foreground)]">Debt Payout</span>
-                  <span className="font-medium text-[var(--warning)]">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Debt Payout</span>
+                  <span className="font-medium text-warning">
                     {formatCurrency(totals.totalDebtPayout)}
                   </span>
                 </div>
-                <div className="flex justify-between py-3 bg-[var(--devalok-50)] -mx-6 px-6">
-                  <span className="font-semibold text-[var(--foreground)]">Net Payout</span>
-                  <span className="font-bold text-[var(--primary)] text-xl">
+                <div className="flex justify-between py-3 bg-devalok-50 -mx-6 px-6">
+                  <span className="font-semibold text-foreground">Net Payout</span>
+                  <span className="font-bold text-primary text-xl">
                     {formatCurrency(totals.totalNet)}
                   </span>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="bg-[var(--muted)] p-4 mb-6">
-              <p className="text-sm text-[var(--muted-foreground)]">
+            <div className="bg-muted p-4 mb-6">
+              <p className="text-sm text-muted-foreground">
                 <strong>What happens next:</strong> After creating the payroll run, you&apos;ll be
                 able to download the Excel files for bank processing. The payroll will be marked
                 as &quot;Pending&quot; until you confirm it&apos;s been paid.
@@ -679,18 +681,11 @@ export default function NewPayrollPage() {
             </div>
 
             <div className="flex justify-between">
-              <button
-                onClick={() => setStep(2)}
-                className="flex items-center gap-2 px-6 py-3 border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--muted)] transition-colors"
-              >
+              <Button variant="outline" size="lg" onClick={() => setStep(2)}>
                 <ArrowLeft className="w-4 h-4" />
                 Back
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={isCreating}
-                className="flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-white font-medium hover:bg-[var(--devalok-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
+              </Button>
+              <Button size="lg" onClick={handleCreate} disabled={isCreating}>
                 {isCreating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -702,7 +697,7 @@ export default function NewPayrollPage() {
                     Create Payroll Run
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         )}

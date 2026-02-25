@@ -4,6 +4,16 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { formatCurrency } from '@/lib/utils'
 import {
   ArrowLeft,
@@ -205,7 +215,7 @@ export default function ProcessDebtPage() {
       <>
         <Header title="Process Debt Payments" />
         <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </main>
       </>
     )
@@ -218,18 +228,18 @@ export default function ProcessDebtPage() {
         <main className="flex-1 overflow-y-auto p-6">
           <Link
             href="/debts"
-            className="inline-flex items-center gap-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] mb-6"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Debts
           </Link>
 
           <div className="max-w-xl mx-auto text-center py-12">
-            <Wallet className="w-16 h-16 mx-auto mb-4 text-[var(--muted-foreground)]" />
-            <h2 className="text-xl font-semibold text-[var(--foreground)] mb-2">
+            <Wallet className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">
               No Outstanding Debts
             </h2>
-            <p className="text-[var(--muted-foreground)]">
+            <p className="text-muted-foreground">
               There are no employees with outstanding salary debts to process.
             </p>
           </div>
@@ -243,10 +253,9 @@ export default function ProcessDebtPage() {
       <Header title="Process Debt Payments" />
 
       <main className="flex-1 overflow-y-auto p-6">
-        {/* Back link */}
         <Link
           href="/debts"
-          className="inline-flex items-center gap-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] mb-6"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Debts
@@ -263,28 +272,28 @@ export default function ProcessDebtPage() {
               <div
                 className={`w-8 h-8 flex items-center justify-center font-medium text-sm ${
                   step >= s.num
-                    ? 'bg-[var(--primary)] text-white'
-                    : 'bg-[var(--muted)] text-[var(--muted-foreground)]'
+                    ? 'bg-primary text-white'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {step > s.num ? <CheckCircle className="w-4 h-4" /> : s.num}
               </div>
               <span
                 className={`ml-2 text-sm ${
-                  step >= s.num ? 'text-[var(--foreground)]' : 'text-[var(--muted-foreground)]'
+                  step >= s.num ? 'text-foreground' : 'text-muted-foreground'
                 }`}
               >
                 {s.label}
               </span>
               {i < 2 && (
-                <ArrowRight className="w-4 h-4 mx-4 text-[var(--muted-foreground)]" />
+                <ArrowRight className="w-4 h-4 mx-4 text-muted-foreground" />
               )}
             </div>
           ))}
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-[var(--error-light)] border border-[var(--error)] text-[var(--error)]">
+          <div className="mb-6 p-4 bg-error-light border border-error text-error">
             {error}
           </div>
         )}
@@ -292,43 +301,43 @@ export default function ProcessDebtPage() {
         {/* Step 1: Select Date */}
         {step === 1 && (
           <div className="max-w-xl">
-            <div className="bg-white border border-[var(--border)]">
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[var(--muted-foreground)]" />
-                <h2 className="text-sm font-semibold text-[var(--foreground)]">
+            <Card className="rounded-none shadow-none">
+              <CardHeader className="flex-row items-center gap-2 border-b px-6 py-4">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm">
                   Select Payment Date
-                </h2>
-              </div>
-              <div className="p-6">
-                <label className="block text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-2">
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
                   Run Date
                 </label>
                 <input
                   type="date"
                   value={runDate}
                   onChange={(e) => setRunDate(e.target.value)}
-                  className="w-full px-4 py-3 border border-[var(--border)] bg-white focus:outline-none focus:border-[var(--primary)]"
+                  className="w-full px-4 py-3 border border-border bg-white focus:outline-none focus:border-primary"
                 />
-                <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+                <p className="mt-2 text-sm text-muted-foreground">
                   This is the date the debt payments will be processed.
                 </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="mt-4 p-4 bg-[var(--warning-light)] border border-[var(--warning)]">
-              <p className="text-sm text-[var(--warning)]">
+            <div className="mt-4 p-4 bg-warning-light border border-warning">
+              <p className="text-sm text-warning">
                 <strong>Note:</strong> TDS will be deducted from debt payments as they are taxable salary amounts.
               </p>
             </div>
 
             <div className="mt-6 flex justify-end">
-              <button
+              <Button
                 onClick={() => setStep(2)}
-                className="flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-white font-medium hover:bg-[var(--devalok-700)] transition-colors"
+                size="lg"
               >
                 Next
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -336,215 +345,221 @@ export default function ProcessDebtPage() {
         {/* Step 2: Select Amounts */}
         {step === 2 && (
           <div>
-            <div className="bg-white border border-[var(--border)] mb-6">
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+            <Card className="rounded-none shadow-none mb-6">
+              <CardHeader className="flex-row items-center justify-between border-b px-6 py-4">
                 <div className="flex items-center gap-2">
-                  <Wallet className="w-4 h-4 text-[var(--muted-foreground)]" />
-                  <h2 className="text-sm font-semibold text-[var(--foreground)]">
+                  <Wallet className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm">
                     Select Debt Amounts to Pay
-                  </h2>
+                  </CardTitle>
                 </div>
-                <span className="text-sm text-[var(--muted-foreground)]">
+                <span className="text-sm text-muted-foreground">
                   {includedPayments.length} of {payments.length} employees selected
                 </span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-[var(--muted)] border-b border-[var(--border)]">
-                      <th className="px-4 py-3 text-left">
+              </CardHeader>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted">
+                    <TableHead className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={includedPayments.length === payments.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            // Select all with full balance
+                            setPayments((prev) =>
+                              prev.map((p) => calculatePayment({
+                                ...p,
+                                include: true,
+                                amount: p.salaryDebtBalance,
+                              }))
+                            )
+                          } else {
+                            // Deselect all
+                            setPayments((prev) =>
+                              prev.map((p) => ({
+                                ...p,
+                                include: false,
+                                amount: 0,
+                                tdsAmount: 0,
+                                netAmount: 0,
+                              }))
+                            )
+                          }
+                        }}
+                        className="w-4 h-4 accent-primary"
+                      />
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Employee
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Outstanding Debt
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Amount to Pay
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      TDS
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Net
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Bank
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {payments.map((payment) => (
+                    <TableRow
+                      key={payment.lokwasiId}
+                      className={payment.include ? '' : 'bg-muted opacity-50'}
+                    >
+                      <TableCell className="px-4 py-4">
                         <input
                           type="checkbox"
-                          checked={includedPayments.length === payments.length}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              // Select all with full balance
-                              setPayments((prev) =>
-                                prev.map((p) => calculatePayment({
-                                  ...p,
-                                  include: true,
-                                  amount: p.salaryDebtBalance,
-                                }))
-                              )
-                            } else {
-                              // Deselect all
-                              setPayments((prev) =>
-                                prev.map((p) => ({
-                                  ...p,
-                                  include: false,
-                                  amount: 0,
-                                  tdsAmount: 0,
-                                  netAmount: 0,
-                                }))
-                              )
-                            }
-                          }}
-                          className="w-4 h-4 accent-[var(--primary)]"
+                          checked={payment.include}
+                          onChange={(e) =>
+                            updatePayment(payment.lokwasiId, 'include', e.target.checked)
+                          }
+                          className="w-4 h-4 accent-primary"
                         />
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Employee
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Outstanding Debt
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Amount to Pay
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        TDS
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Net
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Bank
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border)]">
-                    {payments.map((payment) => (
-                      <tr
-                        key={payment.lokwasiId}
-                        className={`${
-                          payment.include ? '' : 'bg-[var(--muted)] opacity-50'
-                        } transition-colors`}
-                      >
-                        <td className="px-4 py-4">
+                      </TableCell>
+                      <TableCell className="px-4 py-4">
+                        <p className="font-medium text-foreground">
+                          {payment.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {payment.employeeCode}
+                        </p>
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-right">
+                        <span className="font-semibold text-warning">
+                          {formatCurrency(payment.salaryDebtBalance)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-4 py-4">
+                        <div className="flex items-center justify-center gap-2">
                           <input
-                            type="checkbox"
-                            checked={payment.include}
+                            type="number"
+                            min="0"
+                            max={payment.salaryDebtBalance}
+                            step="100"
+                            value={payment.amount || ''}
                             onChange={(e) =>
-                              updatePayment(payment.lokwasiId, 'include', e.target.checked)
+                              updatePayment(
+                                payment.lokwasiId,
+                                'amount',
+                                parseFloat(e.target.value) || 0
+                              )
                             }
-                            className="w-4 h-4 accent-[var(--primary)]"
+                            placeholder="0"
+                            className="w-28 px-2 py-1 border border-border text-right text-sm focus:outline-none focus:border-primary"
                           />
-                        </td>
-                        <td className="px-4 py-4">
-                          <p className="font-medium text-[var(--foreground)]">
-                            {payment.name}
-                          </p>
-                          <p className="text-xs text-[var(--muted-foreground)]">
-                            {payment.employeeCode}
-                          </p>
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          <span className="font-semibold text-[var(--warning)]">
-                            {formatCurrency(payment.salaryDebtBalance)}
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={() => setFullBalance(payment.lokwasiId)}
+                            title="Pay full balance"
+                          >
+                            Full
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-right text-sm text-muted-foreground">
+                        {payment.amount > 0 ? (
+                          <>
+                            {formatCurrency(payment.tdsAmount)}
+                            <p className="text-xs">({payment.tdsRate}%)</p>
+                          </>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-right font-semibold text-foreground">
+                        {payment.amount > 0 ? formatCurrency(payment.netAmount) : '-'}
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-center">
+                        {payment.isAxisBank ? (
+                          <span className="text-xs px-1.5 py-0.5 bg-info text-white">
+                            AXIS
                           </span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <input
-                              type="number"
-                              min="0"
-                              max={payment.salaryDebtBalance}
-                              step="100"
-                              value={payment.amount || ''}
-                              onChange={(e) =>
-                                updatePayment(
-                                  payment.lokwasiId,
-                                  'amount',
-                                  parseFloat(e.target.value) || 0
-                                )
-                              }
-                              placeholder="0"
-                              className="w-28 px-2 py-1 border border-[var(--border)] text-right text-sm focus:outline-none focus:border-[var(--primary)]"
-                            />
-                            <button
-                              onClick={() => setFullBalance(payment.lokwasiId)}
-                              className="text-xs px-2 py-1 bg-[var(--muted)] hover:bg-[var(--border)] transition-colors"
-                              title="Pay full balance"
-                            >
-                              Full
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-right text-sm text-[var(--muted-foreground)]">
-                          {payment.amount > 0 ? (
-                            <>
-                              {formatCurrency(payment.tdsAmount)}
-                              <p className="text-xs">({payment.tdsRate}%)</p>
-                            </>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-right font-semibold text-[var(--foreground)]">
-                          {payment.amount > 0 ? formatCurrency(payment.netAmount) : '-'}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          {payment.isAxisBank ? (
-                            <span className="text-xs px-1.5 py-0.5 bg-[var(--info)] text-white">
-                              AXIS
-                            </span>
-                          ) : (
-                            <span className="text-xs text-[var(--muted-foreground)]">
-                              NEFT
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            NEFT
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
 
             {/* Totals */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white p-4 border border-[var(--border)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  Gross Amount
-                </p>
-                <p className="text-xl font-semibold text-[var(--foreground)]">
-                  {formatCurrency(totals.totalGross)}
-                </p>
-              </div>
-              <div className="bg-white p-4 border border-[var(--border)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  Total TDS
-                </p>
-                <p className="text-xl font-semibold text-[var(--muted-foreground)]">
-                  {formatCurrency(totals.totalTds)}
-                </p>
-              </div>
-              <div className="bg-white p-4 border border-[var(--border)] border-[var(--primary)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  Net Payout
-                </p>
-                <p className="text-xl font-semibold text-[var(--primary)]">
-                  {formatCurrency(totals.totalNet)}
-                </p>
-              </div>
-              <div className="bg-white p-4 border border-[var(--border)]">
-                <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-                  By Bank Type
-                </p>
-                <p className="text-sm">
-                  <span className="text-[var(--info)]">{axisCount} Axis</span>
-                  {' • '}
-                  <span className="text-[var(--muted-foreground)]">{neftCount} NEFT</span>
-                </p>
-              </div>
+              <Card className="rounded-none shadow-none py-0">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    Gross Amount
+                  </p>
+                  <p className="text-xl font-semibold text-foreground">
+                    {formatCurrency(totals.totalGross)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-none shadow-none py-0">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    Total TDS
+                  </p>
+                  <p className="text-xl font-semibold text-muted-foreground">
+                    {formatCurrency(totals.totalTds)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-none shadow-none py-0 border-primary">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    Net Payout
+                  </p>
+                  <p className="text-xl font-semibold text-primary">
+                    {formatCurrency(totals.totalNet)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-none shadow-none py-0">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                    By Bank Type
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-info">{axisCount} Axis</span>
+                    {' \u2022 '}
+                    <span className="text-muted-foreground">{neftCount} NEFT</span>
+                  </p>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="flex justify-between">
-              <button
+              <Button
+                variant="outline"
+                size="lg"
                 onClick={() => setStep(1)}
-                className="flex items-center gap-2 px-6 py-3 border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--muted)] transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back
-              </button>
-              <button
+              </Button>
+              <Button
+                size="lg"
                 onClick={() => setStep(3)}
                 disabled={includedPayments.length === 0}
-                className="flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-white font-medium hover:bg-[var(--devalok-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Next
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -552,17 +567,17 @@ export default function ProcessDebtPage() {
         {/* Step 3: Confirm */}
         {step === 3 && (
           <div className="max-w-2xl">
-            <div className="bg-white border border-[var(--border)] mb-6">
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-[var(--success)]" />
-                <h2 className="text-sm font-semibold text-[var(--foreground)]">
+            <Card className="rounded-none shadow-none mb-6">
+              <CardHeader className="flex-row items-center gap-2 border-b px-6 py-4">
+                <CheckCircle className="w-4 h-4 text-success" />
+                <CardTitle className="text-sm">
                   Confirm Debt Payment Run
-                </h2>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                  <span className="text-[var(--muted-foreground)]">Payment Date</span>
-                  <span className="font-medium text-[var(--foreground)]">
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Payment Date</span>
+                  <span className="font-medium text-foreground">
                     {new Date(runDate).toLocaleDateString('en-IN', {
                       weekday: 'long',
                       day: 'numeric',
@@ -571,71 +586,71 @@ export default function ProcessDebtPage() {
                     })}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                  <span className="text-[var(--muted-foreground)]">Employees</span>
-                  <span className="font-medium text-[var(--foreground)]">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Employees</span>
+                  <span className="font-medium text-foreground">
                     {includedPayments.length}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                  <span className="text-[var(--muted-foreground)]">Gross Debt Amount</span>
-                  <span className="font-medium text-[var(--foreground)]">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Gross Debt Amount</span>
+                  <span className="font-medium text-foreground">
                     {formatCurrency(totals.totalGross)}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                  <span className="text-[var(--muted-foreground)]">TDS Deducted</span>
-                  <span className="font-medium text-[var(--foreground)]">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">TDS Deducted</span>
+                  <span className="font-medium text-foreground">
                     {formatCurrency(totals.totalTds)}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                  <span className="text-[var(--muted-foreground)]">Bank Breakdown</span>
-                  <span className="font-medium text-[var(--foreground)]">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Bank Breakdown</span>
+                  <span className="font-medium text-foreground">
                     {axisCount > 0 && `${axisCount} Axis`}
-                    {axisCount > 0 && neftCount > 0 && ' • '}
+                    {axisCount > 0 && neftCount > 0 && ' \u2022 '}
                     {neftCount > 0 && `${neftCount} NEFT`}
                   </span>
                 </div>
-                <div className="flex justify-between py-3 bg-[var(--devalok-50)] -mx-6 px-6">
-                  <span className="font-semibold text-[var(--foreground)]">Net Payout</span>
-                  <span className="font-bold text-[var(--primary)] text-xl">
+                <div className="flex justify-between py-3 bg-devalok-50 -mx-6 px-6">
+                  <span className="font-semibold text-foreground">Net Payout</span>
+                  <span className="font-bold text-primary text-xl">
                     {formatCurrency(totals.totalNet)}
                   </span>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Employee breakdown */}
-            <div className="bg-white border border-[var(--border)] mb-6">
-              <div className="px-6 py-4 border-b border-[var(--border)]">
-                <h3 className="text-sm font-semibold text-[var(--foreground)]">
+            <Card className="rounded-none shadow-none mb-6">
+              <CardHeader className="border-b px-6 py-4">
+                <CardTitle className="text-sm">
                   Payment Details
-                </h3>
-              </div>
-              <div className="divide-y divide-[var(--border)]">
+                </CardTitle>
+              </CardHeader>
+              <div className="divide-y divide-border">
                 {includedPayments.map((p) => (
                   <div key={p.lokwasiId} className="px-6 py-3 flex justify-between items-center">
                     <div>
-                      <p className="font-medium text-[var(--foreground)]">{p.name}</p>
-                      <p className="text-xs text-[var(--muted-foreground)]">
-                        Debt: {formatCurrency(p.amount)} → Net: {formatCurrency(p.netAmount)}
+                      <p className="font-medium text-foreground">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Debt: {formatCurrency(p.amount)} &rarr; Net: {formatCurrency(p.netAmount)}
                       </p>
                     </div>
                     <span className={`text-xs px-1.5 py-0.5 ${
                       p.isAxisBank
-                        ? 'bg-[var(--info)] text-white'
-                        : 'bg-[var(--muted)] text-[var(--muted-foreground)]'
+                        ? 'bg-info text-white'
+                        : 'bg-muted text-muted-foreground'
                     }`}>
                       {p.isAxisBank ? 'AXIS' : 'NEFT'}
                     </span>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
-            <div className="bg-[var(--muted)] p-4 mb-6">
-              <p className="text-sm text-[var(--muted-foreground)]">
+            <div className="bg-muted p-4 mb-6">
+              <p className="text-sm text-muted-foreground">
                 <strong>What happens next:</strong> After creating the debt run, you&apos;ll be
                 able to download the Excel files for bank processing. The TDS will be added to
                 the monthly TDS report when marked as paid.
@@ -643,17 +658,18 @@ export default function ProcessDebtPage() {
             </div>
 
             <div className="flex justify-between">
-              <button
+              <Button
+                variant="outline"
+                size="lg"
                 onClick={() => setStep(2)}
-                className="flex items-center gap-2 px-6 py-3 border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--muted)] transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back
-              </button>
-              <button
+              </Button>
+              <Button
+                size="lg"
                 onClick={handleCreate}
                 disabled={isCreating}
-                className="flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-white font-medium hover:bg-[var(--devalok-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isCreating ? (
                   <>
@@ -666,7 +682,7 @@ export default function ProcessDebtPage() {
                     Create Debt Run
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         )}

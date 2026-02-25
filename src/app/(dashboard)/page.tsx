@@ -246,9 +246,9 @@ export default async function DashboardPage() {
           </div>
         </div>
       ) : (
-        <div className="mb-6 p-8 bg-success/5 border border-success/20 rounded-sm text-center">
-          <CheckCircle className="w-8 h-8 text-success mx-auto mb-2" />
-          <p className="font-medium text-foreground">All caught up</p>
+        <div className="mb-6 p-8 bg-devalok-50 border border-devalok-200 rounded-sm text-center">
+          <CheckCircle className="w-8 h-8 text-devalok-400 mx-auto mb-2" />
+          <p className="font-medium text-foreground">All <span className="text-primary">caught up</span></p>
           <p className="text-sm text-muted-foreground mt-1">No pending payrolls or actions required.</p>
         </div>
       )}

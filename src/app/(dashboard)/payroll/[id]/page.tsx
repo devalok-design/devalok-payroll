@@ -3,22 +3,34 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Header } from '@/components/layout/Header'
-import { formatCurrency } from '@/lib/utils'
+import { toast } from 'sonner'
 import {
   ArrowLeft,
   CheckCircle,
-  Clock,
   Download,
   FileSpreadsheet,
   Loader2,
-  XCircle,
-  AlertTriangle,
   RefreshCw,
   Save,
   Info,
+  XCircle,
 } from 'lucide-react'
+import { Header } from '@/components/layout/Header'
+import { formatCurrency } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { StatusBadge } from '@/components/ui/status-badge'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
 
 interface Payment {
   id: string
@@ -82,8 +94,6 @@ export default function PayrollDetailPage({
   const [isUpdating, setIsUpdating] = useState(false)
   const [isRerunning, setIsRerunning] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [saveSuccess, setSaveSuccess] = useState(false)
 
   // Editable payment values (keyed by payment id)
   const [edits, setEdits] = useState<Record<string, EditableValues>>({})
@@ -115,7 +125,7 @@ export default function PayrollDetailPage({
       setEdits(initialEdits)
     } catch (err) {
       console.error('Error fetching payroll:', err)
-      setError('Failed to load payroll details')
+      toast.error('Failed to load payroll details')
     } finally {
       setIsLoading(false)
     }
@@ -196,7 +206,6 @@ export default function PayrollDetailPage({
   }
 
   const updateEdit = (paymentId: string, field: keyof EditableValues, value: number) => {
-    setSaveSuccess(false)
     setEdits((prev) => ({
       ...prev,
       [paymentId]: { ...prev[paymentId], [field]: value },
@@ -207,8 +216,6 @@ export default function PayrollDetailPage({
     if (!payroll || !hasUnsavedChanges) return
 
     setIsSaving(true)
-    setError('')
-    setSaveSuccess(false)
 
     try {
       // Only send payments that changed
@@ -245,10 +252,9 @@ export default function PayrollDetailPage({
         }
       }
       setEdits(newEdits)
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
+      toast.success('Changes saved successfully')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save changes')
+      toast.error(err instanceof Error ? err.message : 'Failed to save changes')
     } finally {
       setIsSaving(false)
     }
@@ -284,7 +290,7 @@ export default function PayrollDetailPage({
       }
     } catch (err) {
       console.error('Download error:', err)
-      setError('Failed to download Excel file')
+      toast.error('Failed to download Excel file')
     } finally {
       setIsDownloading(null)
     }
@@ -303,7 +309,7 @@ export default function PayrollDetailPage({
       setPayroll(data.payrollRun)
     } catch (err) {
       console.error('Update error:', err)
-      setError('Failed to update status')
+      toast.error('Failed to update status')
     } finally {
       setIsUpdating(false)
     }
@@ -314,7 +320,6 @@ export default function PayrollDetailPage({
       return
     }
     setIsRerunning(true)
-    setError('')
     try {
       const response = await fetch(`/api/payroll/${id}/rerun`, {
         method: 'POST',
@@ -327,7 +332,7 @@ export default function PayrollDetailPage({
       router.push(`/payroll/${data.payrollRun.id}`)
     } catch (err) {
       console.error('Re-run error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to re-run payroll')
+      toast.error(err instanceof Error ? err.message : 'Failed to re-run payroll')
     } finally {
       setIsRerunning(false)
     }
@@ -338,7 +343,7 @@ export default function PayrollDetailPage({
       <>
         <Header title="Loading..." />
         <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </main>
       </>
     )
@@ -350,8 +355,8 @@ export default function PayrollDetailPage({
         <Header title="Not Found" />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-[var(--muted-foreground)] mb-4">Payroll run not found</p>
-            <Link href="/payroll" className="text-[var(--primary)] hover:underline">
+            <p className="text-muted-foreground mb-4">Payroll run not found</p>
+            <Link href="/payroll" className="text-primary hover:underline">
               Back to Payroll
             </Link>
           </div>
@@ -377,24 +382,11 @@ export default function PayrollDetailPage({
         {/* Back link */}
         <Link
           href="/payroll"
-          className="inline-flex items-center gap-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] mb-6"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Payroll
         </Link>
-
-        {error && (
-          <div className="mb-6 p-4 bg-[var(--error-light)] border border-[var(--error)] text-[var(--error)]">
-            {error}
-          </div>
-        )}
-
-        {saveSuccess && (
-          <Alert className="mb-6 border-[var(--success)]">
-            <CheckCircle className="h-4 w-4 text-[var(--success)]" />
-            <AlertDescription className="text-[var(--success)]">Changes saved successfully</AlertDescription>
-          </Alert>
-        )}
 
         {/* Info banner for PENDING payrolls */}
         {isPending && (
@@ -409,26 +401,8 @@ export default function PayrollDetailPage({
         {/* Status & Actions */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <span
-              className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium ${
-                payroll.status === 'PAID'
-                  ? 'bg-[var(--success-light)] text-[var(--success)]'
-                  : payroll.status === 'PROCESSED'
-                  ? 'bg-[var(--info-light)] text-[var(--info)]'
-                  : payroll.status === 'PENDING'
-                  ? 'bg-[var(--warning-light)] text-[var(--warning)]'
-                  : payroll.status === 'CANCELLED'
-                  ? 'bg-[var(--error-light)] text-[var(--error)]'
-                  : 'bg-[var(--muted)] text-[var(--muted-foreground)]'
-              }`}
-            >
-              {payroll.status === 'PAID' && <CheckCircle className="w-4 h-4" />}
-              {payroll.status === 'PROCESSED' && <Download className="w-4 h-4" />}
-              {payroll.status === 'PENDING' && <Clock className="w-4 h-4" />}
-              {payroll.status === 'CANCELLED' && <XCircle className="w-4 h-4" />}
-              {payroll.status}
-            </span>
-            <span className="text-sm text-[var(--muted-foreground)]">
+            <StatusBadge status={payroll.status} />
+            <span className="text-sm text-muted-foreground">
               Pay Period:{' '}
               {new Date(payroll.payPeriodStart).toLocaleDateString('en-IN', {
                 day: 'numeric',
@@ -445,10 +419,9 @@ export default function PayrollDetailPage({
 
           <div className="flex items-center gap-3">
             {isPending && hasUnsavedChanges && (
-              <button
+              <Button
                 onClick={handleSaveChanges}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white font-medium text-sm hover:bg-[var(--devalok-700)] disabled:opacity-50 transition-colors"
               >
                 {isSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -456,13 +429,13 @@ export default function PayrollDetailPage({
                   <Save className="w-4 h-4" />
                 )}
                 Save Changes
-              </button>
+              </Button>
             )}
             {payroll.status === 'PROCESSED' && (
-              <button
+              <Button
                 onClick={() => updateStatus('PAID')}
                 disabled={isUpdating || isRerunning}
-                className="flex items-center gap-2 px-4 py-2 bg-[var(--success)] text-white font-medium text-sm hover:bg-green-700 disabled:opacity-50 transition-colors"
+                className="bg-success text-white hover:bg-success/90"
               >
                 {isUpdating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -470,13 +443,14 @@ export default function PayrollDetailPage({
                   <CheckCircle className="w-4 h-4" />
                 )}
                 Mark as Paid
-              </button>
+              </Button>
             )}
             {payroll.status !== 'PAID' && (
-              <button
+              <Button
+                variant="outline"
                 onClick={handleRerun}
                 disabled={isUpdating || isRerunning}
-                className="flex items-center gap-2 px-4 py-2 border border-[var(--primary)] text-[var(--primary)] font-medium text-sm hover:bg-[var(--devalok-50)] disabled:opacity-50 transition-colors"
+                className="border-primary text-primary hover:bg-devalok-50"
               >
                 {isRerunning ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -484,13 +458,13 @@ export default function PayrollDetailPage({
                   <RefreshCw className="w-4 h-4" />
                 )}
                 Re-run with Fresh Data
-              </button>
+              </Button>
             )}
             {payroll.status === 'PENDING' && (
-              <button
+              <Button
+                variant="destructive"
                 onClick={() => updateStatus('CANCELLED')}
                 disabled={isUpdating || isRerunning}
-                className="flex items-center gap-2 px-4 py-2 border border-[var(--error)] text-[var(--error)] font-medium text-sm hover:bg-[var(--error-light)] disabled:opacity-50 transition-colors"
               >
                 {isUpdating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -498,84 +472,95 @@ export default function PayrollDetailPage({
                   <XCircle className="w-4 h-4" />
                 )}
                 Cancel
-              </button>
+              </Button>
             )}
           </div>
         </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-              Employees
-            </p>
-            <p className="text-2xl font-semibold text-[var(--foreground)]">
-              {payroll.employeeCount}
-            </p>
-          </div>
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-              Total Gross
-            </p>
-            <p className="text-2xl font-semibold text-[var(--foreground)]">
-              {formatCurrency(displayTotals.totalGross)}
-            </p>
-          </div>
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-              Leave Cashout
-            </p>
-            <p className="text-2xl font-semibold text-[var(--success)]">
-              {formatCurrency(displayTotals.totalLeaveCashout)}
-            </p>
-          </div>
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-              Debt Payout
-            </p>
-            <p className="text-2xl font-semibold text-[var(--warning)]">
-              {formatCurrency(displayTotals.totalDebtPayout)}
-            </p>
-          </div>
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-              Total TDS
-            </p>
-            <p className="text-2xl font-semibold text-[var(--muted-foreground)]">
-              {formatCurrency(displayTotals.totalTds)}
-            </p>
-          </div>
-          <div className="bg-white p-4 border border-[var(--border)] border-[var(--primary)]">
-            <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-              Net Payout
-            </p>
-            <p className="text-2xl font-semibold text-[var(--primary)]">
-              {formatCurrency(displayTotals.totalNet)}
-            </p>
-          </div>
+          <Card className="rounded-none shadow-none py-0 gap-0">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                Employees
+              </p>
+              <p className="text-2xl font-semibold text-foreground">
+                {payroll.employeeCount}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-none shadow-none py-0 gap-0">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                Total Gross
+              </p>
+              <p className="text-2xl font-semibold text-foreground">
+                {formatCurrency(displayTotals.totalGross)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-none shadow-none py-0 gap-0">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                Leave Cashout
+              </p>
+              <p className="text-2xl font-semibold text-success">
+                {formatCurrency(displayTotals.totalLeaveCashout)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-none shadow-none py-0 gap-0">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                Debt Payout
+              </p>
+              <p className="text-2xl font-semibold text-warning">
+                {formatCurrency(displayTotals.totalDebtPayout)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-none shadow-none py-0 gap-0">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                Total TDS
+              </p>
+              <p className="text-2xl font-semibold text-muted-foreground">
+                {formatCurrency(displayTotals.totalTds)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-none shadow-none py-0 gap-0 border-primary">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                Net Payout
+              </p>
+              <p className="text-2xl font-semibold text-primary">
+                {formatCurrency(displayTotals.totalNet)}
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Download Buttons */}
         {(payroll.status === 'PENDING' || payroll.status === 'PROCESSED') && (
-          <div className="mb-6">
-            <div className="bg-[var(--devalok-50)] border border-[var(--devalok-200)] p-4">
+          <Card className="rounded-none shadow-none py-0 gap-0 mb-6 bg-devalok-50 border-devalok-200">
+            <CardContent className="p-4">
               <div className="flex items-start gap-3 mb-4">
-                <FileSpreadsheet className="w-5 h-5 text-[var(--primary)] mt-0.5" />
+                <FileSpreadsheet className="w-5 h-5 text-primary mt-0.5" />
                 <div>
-                  <h3 className="font-medium text-[var(--foreground)]">
+                  <h3 className="font-medium text-foreground">
                     Download Payment Excel
                   </h3>
-                  <p className="text-sm text-[var(--muted-foreground)]">
+                  <p className="text-sm text-muted-foreground">
                     Download the payment files and upload them to Axis Net Banking
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-4">
                 {axisPayments.length > 0 && (
-                  <button
+                  <Button
                     onClick={() => handleDownload('axis')}
                     disabled={isDownloading !== null}
-                    className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white font-medium text-sm hover:bg-[var(--devalok-700)] disabled:opacity-50 transition-colors"
                   >
                     {isDownloading === 'axis' ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -583,13 +568,13 @@ export default function PayrollDetailPage({
                       <Download className="w-4 h-4" />
                     )}
                     Axis Bank ({axisPayments.length})
-                  </button>
+                  </Button>
                 )}
                 {neftPayments.length > 0 && (
-                  <button
+                  <Button
                     onClick={() => handleDownload('neft')}
                     disabled={isDownloading !== null}
-                    className="flex items-center gap-2 px-4 py-2 bg-[var(--devalok-800)] text-white font-medium text-sm hover:bg-[var(--devalok-900)] disabled:opacity-50 transition-colors"
+                    className="bg-devalok-800 text-white hover:bg-devalok-900"
                   >
                     {isDownloading === 'neft' ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -597,112 +582,112 @@ export default function PayrollDetailPage({
                       <Download className="w-4 h-4" />
                     )}
                     NEFT ({neftPayments.length})
-                  </button>
+                  </Button>
                 )}
               </div>
               {axisPayments.length === 0 && (
-                <p className="text-sm text-[var(--muted-foreground)] mt-2">
+                <p className="text-sm text-muted-foreground mt-2">
                   No Axis Bank account holders in this payroll
                 </p>
               )}
               {neftPayments.length === 0 && (
-                <p className="text-sm text-[var(--muted-foreground)] mt-2">
+                <p className="text-sm text-muted-foreground mt-2">
                   No NEFT payments required - all employees have Axis accounts
                 </p>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Payments Table */}
-        <div className="bg-white border border-[var(--border)]">
-          <div className="px-6 py-4 border-b border-[var(--border)]">
-            <h2 className="text-sm font-semibold text-[var(--foreground)]">
+        <Card className="rounded-none shadow-none py-0 gap-0">
+          <CardHeader className="px-6 py-4 border-b">
+            <CardTitle className="text-sm">
               Payment Details
-            </h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-[var(--muted)] border-b border-[var(--border)]">
-                  <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted">
+                  <TableHead className="px-4 py-3 text-xs tracking-wider uppercase text-muted-foreground">
                     Employee
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-xs tracking-wider uppercase text-muted-foreground">
                     Reference
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-right text-xs tracking-wider uppercase text-muted-foreground">
                     Gross
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-center text-xs tracking-wider uppercase text-muted-foreground">
                     Leave Cashout
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-center text-xs tracking-wider uppercase text-muted-foreground">
                     Debt Payout
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-right text-xs tracking-wider uppercase text-muted-foreground">
                     Recovery
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-right text-xs tracking-wider uppercase text-muted-foreground">
                     TDS
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-right text-xs tracking-wider uppercase text-muted-foreground">
                     Net
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-center text-xs tracking-wider uppercase text-muted-foreground">
                     Bank
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-center text-xs tracking-wider uppercase text-muted-foreground">
                     Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {payroll.payments.map((payment) => {
                   const calc = isPending ? getCalculatedPayment(payment) : payment
                   const edit = edits[payment.id]
                   return (
-                    <tr key={payment.id} className="hover:bg-[var(--muted)] transition-colors">
-                      <td className="px-4 py-4">
+                    <TableRow key={payment.id}>
+                      <TableCell className="px-4 py-4">
                         <Link
                           href={`/lokwasis/${payment.lokwasi.id}`}
-                          className="font-medium text-[var(--foreground)] hover:text-[var(--primary)]"
+                          className="font-medium text-foreground hover:text-primary"
                         >
                           {payment.lokwasi.name}
                         </Link>
-                        <p className="text-xs text-[var(--muted-foreground)]">
+                        <p className="text-xs text-muted-foreground">
                           {payment.lokwasi.employeeCode}
                         </p>
-                      </td>
-                      <td className="px-4 py-4 text-sm font-mono text-[var(--muted-foreground)]">
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-sm font-mono text-muted-foreground">
                         {payment.customerReference}
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-[var(--foreground)]">
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-right text-sm text-foreground">
                         {formatCurrency(payment.grossAmount)}
-                      </td>
+                      </TableCell>
 
                       {/* Leave Cashout - editable when PENDING */}
-                      <td className="px-4 py-4">
+                      <TableCell className="px-4 py-4">
                         {isPending ? (
                           <div>
                             <div className="flex items-center justify-center gap-2">
-                              <input
+                              <Input
                                 type="number"
-                                min="0"
+                                min={0}
                                 max={payment.lokwasi.leaveBalance}
-                                step="0.5"
+                                step={0.5}
                                 value={edit?.leaveCashoutDays ?? 0}
                                 onChange={(e) =>
                                   updateEdit(payment.id, 'leaveCashoutDays', parseFloat(e.target.value) || 0)
                                 }
-                                className="w-16 px-2 py-1 border border-[var(--border)] text-center text-sm focus:outline-none focus:border-[var(--primary)]"
+                                className="w-16 h-8 px-2 py-1 text-center text-sm"
                               />
-                              <span className="text-xs text-[var(--muted-foreground)]">
+                              <span className="text-xs text-muted-foreground">
                                 / {payment.lokwasi.leaveBalance}
                               </span>
                             </div>
                             {calc.leaveCashoutAmount > 0 && (
-                              <p className="text-xs text-center text-[var(--success)] mt-1">
+                              <p className="text-xs text-center text-success mt-1">
                                 +{formatCurrency(calc.leaveCashoutAmount)}
                               </p>
                             )}
@@ -710,38 +695,38 @@ export default function PayrollDetailPage({
                         ) : (
                           <div className="text-right text-sm">
                             {payment.leaveCashoutAmount > 0 ? (
-                              <span className="text-[var(--success)]">
+                              <span className="text-success">
                                 +{formatCurrency(payment.leaveCashoutAmount)}
-                                <span className="text-xs block text-[var(--muted-foreground)]">
+                                <span className="text-xs block text-muted-foreground">
                                   ({payment.leaveCashoutDays} days)
                                 </span>
                               </span>
                             ) : (
-                              <span className="text-[var(--muted-foreground)]">-</span>
+                              <span className="text-muted-foreground">-</span>
                             )}
                           </div>
                         )}
-                      </td>
+                      </TableCell>
 
                       {/* Debt Payout - editable when PENDING */}
-                      <td className="px-4 py-4">
+                      <TableCell className="px-4 py-4">
                         {isPending ? (
                           <div>
                             <div className="flex items-center justify-center gap-2">
-                              <input
+                              <Input
                                 type="number"
-                                min="0"
+                                min={0}
                                 max={payment.lokwasi.salaryDebtBalance}
-                                step="100"
+                                step={100}
                                 value={edit?.debtPayoutAmount ?? 0}
                                 onChange={(e) =>
                                   updateEdit(payment.id, 'debtPayoutAmount', parseFloat(e.target.value) || 0)
                                 }
-                                className="w-24 px-2 py-1 border border-[var(--border)] text-center text-sm focus:outline-none focus:border-[var(--primary)]"
+                                className="w-24 h-8 px-2 py-1 text-center text-sm"
                               />
                             </div>
                             {payment.lokwasi.salaryDebtBalance > 0 && (
-                              <p className="text-xs text-center text-[var(--warning)] mt-1">
+                              <p className="text-xs text-center text-warning mt-1">
                                 {formatCurrency(payment.lokwasi.salaryDebtBalance)} owed
                               </p>
                             )}
@@ -749,66 +734,54 @@ export default function PayrollDetailPage({
                         ) : (
                           <div className="text-right text-sm">
                             {payment.debtPayoutAmount > 0 ? (
-                              <span className="text-[var(--warning)]">
+                              <span className="text-warning">
                                 +{formatCurrency(payment.debtPayoutAmount)}
                               </span>
                             ) : (
-                              <span className="text-[var(--muted-foreground)]">-</span>
+                              <span className="text-muted-foreground">-</span>
                             )}
                           </div>
                         )}
-                      </td>
+                      </TableCell>
 
-                      <td className="px-4 py-4 text-right text-sm">
+                      <TableCell className="px-4 py-4 text-right text-sm">
                         {calc.accountDebitAmount > 0 ? (
-                          <span className="text-[var(--error)]">
+                          <span className="text-error">
                             -{formatCurrency(calc.accountDebitAmount)}
                           </span>
                         ) : (
-                          <span className="text-[var(--muted-foreground)]">-</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-[var(--muted-foreground)]">
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-right text-sm text-muted-foreground">
                         {formatCurrency(calc.tdsAmount)}
                         <span className="text-xs block">({payment.tdsRate}%)</span>
-                      </td>
-                      <td className="px-4 py-4 text-right font-semibold text-[var(--foreground)]">
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-right font-semibold text-foreground">
                         {formatCurrency(calc.netAmount)}
-                      </td>
-                      <td className="px-4 py-4 text-center">
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-center">
                         {payment.lokwasi.isAxisBank ? (
-                          <span className="text-xs px-1.5 py-0.5 bg-[var(--info)] text-white">
-                            AXIS
-                          </span>
+                          <Badge variant="info">AXIS</Badge>
                         ) : (
-                          <span className="text-xs text-[var(--muted-foreground)]">
+                          <span className="text-xs text-muted-foreground">
                             {payment.lokwasi.bankName}
                           </span>
                         )}
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        <span
-                          className={`text-xs px-2 py-0.5 ${
-                            payment.paymentStatus === 'PAID'
-                              ? 'bg-[var(--success-light)] text-[var(--success)]'
-                              : payment.paymentStatus === 'FAILED'
-                              ? 'bg-[var(--error-light)] text-[var(--error)]'
-                              : 'bg-[var(--warning-light)] text-[var(--warning)]'
-                          }`}
-                        >
-                          {payment.paymentStatus}
-                        </span>
-                      </td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-center">
+                        <StatusBadge status={payment.paymentStatus} showIcon={false} />
+                      </TableCell>
+                    </TableRow>
                   )
                 })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
         {/* Metadata */}
-        <div className="mt-6 flex flex-wrap items-center gap-6 text-xs text-[var(--muted-foreground)]">
+        <div className="mt-6 flex flex-wrap items-center gap-6 text-xs text-muted-foreground">
           <span>Created: {new Date(payroll.createdAt).toLocaleString('en-IN')}</span>
           {payroll.processedAt && (
             <span>Processed: {new Date(payroll.processedAt).toLocaleString('en-IN')}</span>

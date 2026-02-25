@@ -16,6 +16,7 @@ import { signOut } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { useSidebar } from '@/components/layout/SidebarProvider'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -26,22 +27,23 @@ const navigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
-export function Sidebar() {
+function SidebarContent() {
   const pathname = usePathname()
+  const { close } = useSidebar()
 
   return (
     <div className="flex flex-col h-full w-64 bg-sidebar text-sidebar-foreground">
       {/* Logo */}
       <div className="p-6">
         <Image
-          src="https://raw.githubusercontent.com/devalok-design/devalok-brand-assets/main/Logo/PNG/WHITE/WHITE%20-%20Monogram%20%2B%20Wordmark-01.png"
+          src="/brand/logo-white.png"
           alt="Devalok"
           width={140}
           height={42}
           priority
         />
         <p className="mt-2 text-[10px] font-medium tracking-widest uppercase text-sidebar-foreground/60">
-          Payroll System
+          Karm Payroll
         </p>
       </div>
 
@@ -57,11 +59,12 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={close}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-sm transition-colors',
+                'flex items-center gap-3 py-2.5 text-sm font-medium rounded-sm transition-colors',
                 isActive
-                  ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                  ? 'border-l-[3px] border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground pl-[9px] pr-3'
+                  : 'px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
               )}
             >
               <item.icon className="w-4 h-4" />
@@ -85,5 +88,33 @@ export function Sidebar() {
         </Button>
       </div>
     </div>
+  )
+}
+
+export function Sidebar() {
+  const { isOpen, close } = useSidebar()
+
+  return (
+    <>
+      {/* Desktop sidebar — static */}
+      <div className="hidden md:block shrink-0">
+        <SidebarContent />
+      </div>
+
+      {/* Mobile sidebar — overlay */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={close}
+          />
+          {/* Drawer */}
+          <div className="relative h-full w-64 animate-in slide-in-from-left duration-200">
+            <SidebarContent />
+          </div>
+        </div>
+      )}
+    </>
   )
 }

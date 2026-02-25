@@ -3,6 +3,19 @@ import { Header } from '@/components/layout/Header'
 import { prisma } from '@/lib/prisma'
 import { formatCurrency, maskPan, formatDate } from '@/lib/utils'
 import { Plus, Search, Users, UserX } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table'
+import { Card } from '@/components/ui/card'
+import { StatusBadge } from '@/components/ui/status-badge'
+import { Badge } from '@/components/ui/badge'
 
 async function getLokwasis() {
   return prisma.lokwasi.findMany({
@@ -39,10 +52,10 @@ export default async function LokwasisPage() {
         {/* Header with actions */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="text-sm text-[var(--muted-foreground)]">
+            <p className="text-sm text-muted-foreground">
               {activeLokwasis.length} active team members
               {terminatedLokwasis.length > 0 && (
-                <span className="ml-2 text-[var(--error)]">
+                <span className="ml-2 text-error">
                   • {terminatedLokwasis.length} terminated
                 </span>
               )}
@@ -50,164 +63,154 @@ export default async function LokwasisPage() {
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)]" />
-              <input
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
                 type="text"
                 placeholder="Search lokwasis..."
-                className="pl-10 pr-4 py-2 border border-[var(--border)] bg-white text-sm focus:outline-none focus:border-[var(--primary)]"
+                className="pl-10"
               />
             </div>
-            <Link
-              href="/lokwasis/new"
-              className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white font-medium text-sm hover:bg-[var(--devalok-700)] transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Lokwasi
-            </Link>
+            <Button asChild>
+              <Link href="/lokwasis/new">
+                <Plus className="w-4 h-4" />
+                Add Lokwasi
+              </Link>
+            </Button>
           </div>
         </div>
 
         {/* Active Lokwasis Table */}
-        <div className="bg-white border border-[var(--border)] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-[var(--muted)] border-b border-[var(--border)]">
-                  <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    PAN
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Bank
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Salary
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    TDS %
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Leave Balance
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Debt
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {activeLokwasis.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center">
-                      <Users className="w-12 h-12 mx-auto mb-4 text-[var(--muted-foreground)]" />
-                      <p className="text-[var(--muted-foreground)]">No active lokwasis found</p>
-                      <Link
-                        href="/lokwasis/new"
-                        className="mt-4 inline-block text-[var(--primary)] hover:underline"
-                      >
-                        Add your first lokwasi
-                      </Link>
-                    </td>
-                  </tr>
-                ) : (
-                  activeLokwasis.map((lokwasi) => (
-                    <tr
-                      key={lokwasi.id}
-                      className="hover:bg-[var(--muted)] transition-colors"
+        <Card className="gap-0 py-0 overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted">
+                <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Name
+                </TableHead>
+                <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  PAN
+                </TableHead>
+                <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Bank
+                </TableHead>
+                <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Salary
+                </TableHead>
+                <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  TDS %
+                </TableHead>
+                <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Leave Balance
+                </TableHead>
+                <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Debt
+                </TableHead>
+                <TableHead className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Status
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {activeLokwasis.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="px-4 py-12 text-center">
+                    <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">No active lokwasis found</p>
+                    <Link
+                      href="/lokwasis/new"
+                      className="mt-4 inline-block text-primary hover:underline"
                     >
-                      <td className="px-4 py-4">
-                        <Link
-                          href={`/lokwasis/${lokwasi.id}`}
-                          className="font-medium text-[var(--foreground)] hover:text-[var(--primary)]"
-                        >
-                          {lokwasi.name}
-                        </Link>
-                        <p className="text-xs text-[var(--muted-foreground)]">
-                          {lokwasi.employeeCode}
-                        </p>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-[var(--muted-foreground)]">
-                        {maskPan(lokwasi.pan)}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className="text-sm text-[var(--foreground)]">
-                          {lokwasi.bankName || '-'}
+                      Add your first lokwasi
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                activeLokwasis.map((lokwasi) => (
+                  <TableRow key={lokwasi.id}>
+                    <TableCell className="px-4 py-4">
+                      <Link
+                        href={`/lokwasis/${lokwasi.id}`}
+                        className="font-medium text-foreground hover:text-primary"
+                      >
+                        {lokwasi.name}
+                      </Link>
+                      <p className="text-xs text-muted-foreground">
+                        {lokwasi.employeeCode}
+                      </p>
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-sm text-muted-foreground">
+                      {maskPan(lokwasi.pan)}
+                    </TableCell>
+                    <TableCell className="px-4 py-4">
+                      <span className="text-sm text-foreground">
+                        {lokwasi.bankName || '-'}
+                      </span>
+                      {lokwasi.isAxisBank && (
+                        <Badge variant="info" className="ml-2">AXIS</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-right font-medium text-foreground">
+                      {formatCurrency(Number(lokwasi.grossSalary))}
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-right text-sm text-foreground">
+                      {Number(lokwasi.tdsRate)}%
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-right text-sm text-foreground">
+                      {Number(lokwasi.leaveBalance)} days
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-right">
+                      {Number(lokwasi.salaryDebtBalance) > 0 ? (
+                        <span className="font-medium text-warning">
+                          {formatCurrency(Number(lokwasi.salaryDebtBalance))}
                         </span>
-                        {lokwasi.isAxisBank && (
-                          <span className="ml-2 text-xs px-1.5 py-0.5 bg-[var(--info)] text-white">
-                            AXIS
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-right font-medium text-[var(--foreground)]">
-                        {formatCurrency(Number(lokwasi.grossSalary))}
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-[var(--foreground)]">
-                        {Number(lokwasi.tdsRate)}%
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-[var(--foreground)]">
-                        {Number(lokwasi.leaveBalance)} days
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        {Number(lokwasi.salaryDebtBalance) > 0 ? (
-                          <span className="font-medium text-[var(--warning)]">
-                            {formatCurrency(Number(lokwasi.salaryDebtBalance))}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-[var(--muted-foreground)]">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        <span className="inline-block px-2 py-1 text-xs font-medium bg-[var(--success-light)] text-[var(--success)]">
-                          ACTIVE
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-center">
+                      <StatusBadge status="ACTIVE" showIcon={false} />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Card>
 
         {/* Summary */}
         {activeLokwasis.length > 0 && (
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-4 border border-[var(--border)]">
-              <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+            <Card className="gap-2 p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
                 Total Monthly Salary
               </p>
-              <p className="text-xl font-semibold text-[var(--foreground)]">
+              <p className="text-xl font-semibold text-foreground">
                 {formatCurrency(
                   activeLokwasis.reduce((sum, l) => sum + Number(l.grossSalary) * 2, 0)
                 )}
               </p>
-              <p className="text-xs text-[var(--muted-foreground)]">
+              <p className="text-xs text-muted-foreground">
                 (2 pay cycles)
               </p>
-            </div>
-            <div className="bg-white p-4 border border-[var(--border)]">
-              <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+            </Card>
+            <Card className="gap-2 p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
                 Total Leave Balance
               </p>
-              <p className="text-xl font-semibold text-[var(--foreground)]">
+              <p className="text-xl font-semibold text-foreground">
                 {activeLokwasis.reduce((sum, l) => sum + Number(l.leaveBalance), 0)} days
               </p>
-            </div>
-            <div className="bg-white p-4 border border-[var(--border)]">
-              <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
+            </Card>
+            <Card className="gap-2 p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
                 Total Pending Debt
               </p>
-              <p className="text-xl font-semibold text-[var(--warning)]">
+              <p className="text-xl font-semibold text-warning">
                 {formatCurrency(
                   activeLokwasis.reduce((sum, l) => sum + Number(l.salaryDebtBalance), 0)
                 )}
               </p>
-            </div>
+            </Card>
           </div>
         )}
 
@@ -215,83 +218,81 @@ export default async function LokwasisPage() {
         {terminatedLokwasis.length > 0 && (
           <div className="mt-10">
             <div className="flex items-center gap-2 mb-4">
-              <UserX className="w-5 h-5 text-[var(--error)]" />
-              <h2 className="text-lg font-semibold text-[var(--foreground)]">
+              <UserX className="w-5 h-5 text-error" />
+              <h2 className="text-lg font-semibold text-foreground">
                 Terminated Lokwasis
               </h2>
-              <span className="text-sm text-[var(--muted-foreground)]">
+              <span className="text-sm text-muted-foreground">
                 ({terminatedLokwasis.length})
               </span>
             </div>
-            <div className="bg-white border border-[var(--border)] overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-[var(--muted)] border-b border-[var(--border)]">
-                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Name
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        PAN
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Last Salary
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Outstanding Debt
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Terminated Date
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border)]">
-                    {terminatedLokwasis.map((lokwasi) => (
-                      <tr
-                        key={lokwasi.id}
-                        className="hover:bg-[var(--muted)] transition-colors opacity-75"
-                      >
-                        <td className="px-4 py-4">
-                          <Link
-                            href={`/lokwasis/${lokwasi.id}`}
-                            className="font-medium text-[var(--foreground)] hover:text-[var(--primary)]"
-                          >
-                            {lokwasi.name}
-                          </Link>
-                          <p className="text-xs text-[var(--muted-foreground)]">
-                            {lokwasi.employeeCode}
-                          </p>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-[var(--muted-foreground)]">
-                          {maskPan(lokwasi.pan)}
-                        </td>
-                        <td className="px-4 py-4 text-right text-sm text-[var(--muted-foreground)]">
-                          {formatCurrency(Number(lokwasi.grossSalary))}
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          {Number(lokwasi.salaryDebtBalance) > 0 ? (
-                            <span className="font-medium text-[var(--warning)]">
-                              {formatCurrency(Number(lokwasi.salaryDebtBalance))}
-                            </span>
-                          ) : (
-                            <span className="text-sm text-[var(--muted-foreground)]">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-[var(--error)]">
-                          {lokwasi.terminatedDate
-                            ? formatDate(lokwasi.terminatedDate)
-                            : 'Unknown'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <Card className="gap-0 py-0 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted">
+                    <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Name
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      PAN
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Last Salary
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Outstanding Debt
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Terminated Date
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {terminatedLokwasis.map((lokwasi) => (
+                    <TableRow
+                      key={lokwasi.id}
+                      className="opacity-75"
+                    >
+                      <TableCell className="px-4 py-4">
+                        <Link
+                          href={`/lokwasis/${lokwasi.id}`}
+                          className="font-medium text-foreground hover:text-primary"
+                        >
+                          {lokwasi.name}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                          {lokwasi.employeeCode}
+                        </p>
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-sm text-muted-foreground">
+                        {maskPan(lokwasi.pan)}
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-right text-sm text-muted-foreground">
+                        {formatCurrency(Number(lokwasi.grossSalary))}
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-right">
+                        {Number(lokwasi.salaryDebtBalance) > 0 ? (
+                          <span className="font-medium text-warning">
+                            {formatCurrency(Number(lokwasi.salaryDebtBalance))}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-sm text-error">
+                        {lokwasi.terminatedDate
+                          ? formatDate(lokwasi.terminatedDate)
+                          : 'Unknown'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
 
             {/* Terminated summary */}
-            <div className="mt-4 p-4 bg-[var(--error-light)] border border-[var(--error)]/20">
-              <p className="text-sm text-[var(--error)]">
+            <div className="mt-4 p-4 bg-error-light border border-error/20">
+              <p className="text-sm text-error">
                 <strong>Outstanding debt from terminated lokwasis:</strong>{' '}
                 {formatCurrency(
                   terminatedLokwasis.reduce((sum, l) => sum + Number(l.salaryDebtBalance), 0)
@@ -304,60 +305,58 @@ export default async function LokwasisPage() {
         {/* Inactive Lokwasis Section (if any) */}
         {inactiveLokwasis.length > 0 && (
           <div className="mt-10">
-            <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">
+            <h2 className="text-lg font-semibold text-foreground mb-4">
               Inactive Lokwasis ({inactiveLokwasis.length})
             </h2>
-            <div className="bg-white border border-[var(--border)] overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-[var(--muted)] border-b border-[var(--border)]">
-                      <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Name
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Last Salary
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                        Outstanding Debt
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border)]">
-                    {inactiveLokwasis.map((lokwasi) => (
-                      <tr
-                        key={lokwasi.id}
-                        className="hover:bg-[var(--muted)] transition-colors opacity-60"
-                      >
-                        <td className="px-4 py-4">
-                          <Link
-                            href={`/lokwasis/${lokwasi.id}`}
-                            className="font-medium text-[var(--foreground)] hover:text-[var(--primary)]"
-                          >
-                            {lokwasi.name}
-                          </Link>
-                          <p className="text-xs text-[var(--muted-foreground)]">
-                            {lokwasi.employeeCode}
-                          </p>
-                        </td>
-                        <td className="px-4 py-4 text-right text-sm text-[var(--muted-foreground)]">
-                          {formatCurrency(Number(lokwasi.grossSalary))}
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          {Number(lokwasi.salaryDebtBalance) > 0 ? (
-                            <span className="font-medium text-[var(--warning)]">
-                              {formatCurrency(Number(lokwasi.salaryDebtBalance))}
-                            </span>
-                          ) : (
-                            <span className="text-sm text-[var(--muted-foreground)]">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <Card className="gap-0 py-0 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted">
+                    <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Name
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Last Salary
+                    </TableHead>
+                    <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                      Outstanding Debt
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {inactiveLokwasis.map((lokwasi) => (
+                    <TableRow
+                      key={lokwasi.id}
+                      className="opacity-60"
+                    >
+                      <TableCell className="px-4 py-4">
+                        <Link
+                          href={`/lokwasis/${lokwasi.id}`}
+                          className="font-medium text-foreground hover:text-primary"
+                        >
+                          {lokwasi.name}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                          {lokwasi.employeeCode}
+                        </p>
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-right text-sm text-muted-foreground">
+                        {formatCurrency(Number(lokwasi.grossSalary))}
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-right">
+                        {Number(lokwasi.salaryDebtBalance) > 0 ? (
+                          <span className="font-medium text-warning">
+                            {formatCurrency(Number(lokwasi.salaryDebtBalance))}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
           </div>
         )}
       </main>

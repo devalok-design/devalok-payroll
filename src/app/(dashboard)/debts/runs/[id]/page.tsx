@@ -3,17 +3,29 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { Header } from '@/components/layout/Header'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { StatusBadge } from '@/components/ui/status-badge'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { formatCurrency } from '@/lib/utils'
 import {
   ArrowLeft,
   CheckCircle,
-  Clock,
   Download,
   FileSpreadsheet,
   Loader2,
-  XCircle,
   Wallet,
+  XCircle,
 } from 'lucide-react'
 
 interface DebtPayment {
@@ -59,7 +71,6 @@ export default function DebtRunDetailPage({
   const [isLoading, setIsLoading] = useState(true)
   const [isDownloading, setIsDownloading] = useState<string | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [error, setError] = useState('')
 
   useEffect(() => {
     fetchDebtRun()
@@ -79,7 +90,7 @@ export default function DebtRunDetailPage({
       setDebtRun(data.debtRun)
     } catch (err) {
       console.error('Error fetching debt run:', err)
-      setError('Failed to load debt run details')
+      toast.error('Failed to load debt run details')
     } finally {
       setIsLoading(false)
     }
@@ -114,7 +125,7 @@ export default function DebtRunDetailPage({
     } catch (err) {
       console.error('Download error:', err)
       const message = err instanceof Error ? err.message : 'Failed to download Excel file'
-      setError(message)
+      toast.error(message)
     } finally {
       setIsDownloading(null)
     }
@@ -131,9 +142,10 @@ export default function DebtRunDetailPage({
       if (!response.ok) throw new Error('Failed to update status')
       const data = await response.json()
       setDebtRun(data.debtRun)
+      toast.success(`Status updated to ${status}`)
     } catch (err) {
       console.error('Update error:', err)
-      setError('Failed to update status')
+      toast.error('Failed to update status')
     } finally {
       setIsUpdating(false)
     }
@@ -144,7 +156,7 @@ export default function DebtRunDetailPage({
       <>
         <Header title="Loading..." />
         <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </main>
       </>
     )
@@ -156,8 +168,8 @@ export default function DebtRunDetailPage({
         <Header title="Not Found" />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-[var(--muted-foreground)] mb-4">Debt run not found</p>
-            <Link href="/debts/runs" className="text-[var(--primary)] hover:underline">
+            <p className="text-muted-foreground mb-4">Debt run not found</p>
+            <Link href="/debts/runs" className="text-primary hover:underline">
               Back to Debt Runs
             </Link>
           </div>
@@ -183,48 +195,22 @@ export default function DebtRunDetailPage({
         {/* Back link */}
         <Link
           href="/debts/runs"
-          className="inline-flex items-center gap-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] mb-6"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Debt Runs
         </Link>
 
-        {error && (
-          <div className="mb-6 p-4 bg-[var(--error-light)] border border-[var(--error)] text-[var(--error)]">
-            {error}
-          </div>
-        )}
-
         {/* Status & Actions */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <span
-              className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium ${
-                debtRun.status === 'PAID'
-                  ? 'bg-[var(--success-light)] text-[var(--success)]'
-                  : debtRun.status === 'PROCESSED'
-                  ? 'bg-[var(--info-light)] text-[var(--info)]'
-                  : debtRun.status === 'PENDING'
-                  ? 'bg-[var(--warning-light)] text-[var(--warning)]'
-                  : debtRun.status === 'CANCELLED'
-                  ? 'bg-[var(--error-light)] text-[var(--error)]'
-                  : 'bg-[var(--muted)] text-[var(--muted-foreground)]'
-              }`}
-            >
-              {debtRun.status === 'PAID' && <CheckCircle className="w-4 h-4" />}
-              {debtRun.status === 'PROCESSED' && <Download className="w-4 h-4" />}
-              {debtRun.status === 'PENDING' && <Clock className="w-4 h-4" />}
-              {debtRun.status === 'CANCELLED' && <XCircle className="w-4 h-4" />}
-              {debtRun.status}
-            </span>
-          </div>
+          <StatusBadge status={debtRun.status} />
 
           <div className="flex items-center gap-3">
             {debtRun.status === 'PROCESSED' && (
-              <button
+              <Button
                 onClick={() => updateStatus('PAID')}
                 disabled={isUpdating}
-                className="flex items-center gap-2 px-4 py-2 bg-[var(--success)] text-white font-medium text-sm hover:bg-green-700 disabled:opacity-50 transition-colors"
+                className="bg-success text-white hover:bg-success/80"
               >
                 {isUpdating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -232,13 +218,14 @@ export default function DebtRunDetailPage({
                   <CheckCircle className="w-4 h-4" />
                 )}
                 Mark as Paid
-              </button>
+              </Button>
             )}
             {debtRun.status === 'PENDING' && (
-              <button
+              <Button
+                variant="outline"
                 onClick={() => updateStatus('CANCELLED')}
                 disabled={isUpdating}
-                className="flex items-center gap-2 px-4 py-2 border border-[var(--error)] text-[var(--error)] font-medium text-sm hover:bg-[var(--error-light)] disabled:opacity-50 transition-colors"
+                className="border-error text-error hover:bg-error-light"
               >
                 {isUpdating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -246,68 +233,75 @@ export default function DebtRunDetailPage({
                   <XCircle className="w-4 h-4" />
                 )}
                 Cancel
-              </button>
+              </Button>
             )}
           </div>
         </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-              Employees
-            </p>
-            <p className="text-2xl font-semibold text-[var(--foreground)]">
-              {debtRun.employeeCount}
-            </p>
-          </div>
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-              Gross Debt
-            </p>
-            <p className="text-2xl font-semibold text-[var(--warning)]">
-              {formatCurrency(debtRun.totalGross)}
-            </p>
-          </div>
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-              Total TDS
-            </p>
-            <p className="text-2xl font-semibold text-[var(--muted-foreground)]">
-              {formatCurrency(debtRun.totalTds)}
-            </p>
-          </div>
-          <div className="bg-white p-4 border border-[var(--border)] border-[var(--primary)]">
-            <p className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)] mb-1">
-              Net Payout
-            </p>
-            <p className="text-2xl font-semibold text-[var(--primary)]">
-              {formatCurrency(debtRun.totalNet)}
-            </p>
-          </div>
+          <Card className="rounded-none shadow-none py-0 gap-0">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                Employees
+              </p>
+              <p className="text-2xl font-semibold text-foreground">
+                {debtRun.employeeCount}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-none shadow-none py-0 gap-0">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                Gross Debt
+              </p>
+              <p className="text-2xl font-semibold text-warning">
+                {formatCurrency(debtRun.totalGross)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-none shadow-none py-0 gap-0">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                Total TDS
+              </p>
+              <p className="text-2xl font-semibold text-muted-foreground">
+                {formatCurrency(debtRun.totalTds)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-none shadow-none py-0 gap-0 border-primary">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                Net Payout
+              </p>
+              <p className="text-2xl font-semibold text-primary">
+                {formatCurrency(debtRun.totalNet)}
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Download Buttons */}
         {(debtRun.status === 'PENDING' || debtRun.status === 'PROCESSED') && (
-          <div className="mb-6">
-            <div className="bg-[var(--devalok-50)] border border-[var(--devalok-200)] p-4">
+          <Card className="rounded-none shadow-none py-0 gap-0 mb-6 bg-devalok-50 border-devalok-200">
+            <CardContent className="p-4">
               <div className="flex items-start gap-3 mb-4">
-                <FileSpreadsheet className="w-5 h-5 text-[var(--primary)] mt-0.5" />
+                <FileSpreadsheet className="w-5 h-5 text-primary mt-0.5" />
                 <div>
-                  <h3 className="font-medium text-[var(--foreground)]">
+                  <h3 className="font-medium text-foreground">
                     Download Payment Excel
                   </h3>
-                  <p className="text-sm text-[var(--muted-foreground)]">
+                  <p className="text-sm text-muted-foreground">
                     Download the payment files and upload them to Axis Net Banking
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-4">
                 {axisPayments.length > 0 && (
-                  <button
+                  <Button
                     onClick={() => handleDownload('axis')}
                     disabled={isDownloading !== null}
-                    className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white font-medium text-sm hover:bg-[var(--devalok-700)] disabled:opacity-50 transition-colors"
                   >
                     {isDownloading === 'axis' ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -315,13 +309,13 @@ export default function DebtRunDetailPage({
                       <Download className="w-4 h-4" />
                     )}
                     Axis Bank ({axisPayments.length})
-                  </button>
+                  </Button>
                 )}
                 {neftPayments.length > 0 && (
-                  <button
+                  <Button
                     onClick={() => handleDownload('neft')}
                     disabled={isDownloading !== null}
-                    className="flex items-center gap-2 px-4 py-2 bg-[var(--devalok-800)] text-white font-medium text-sm hover:bg-[var(--devalok-900)] disabled:opacity-50 transition-colors"
+                    className="bg-devalok-800 text-white hover:bg-devalok-900"
                   >
                     {isDownloading === 'neft' ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -329,124 +323,118 @@ export default function DebtRunDetailPage({
                       <Download className="w-4 h-4" />
                     )}
                     NEFT ({neftPayments.length})
-                  </button>
+                  </Button>
                 )}
               </div>
               {axisPayments.length === 0 && (
-                <p className="text-sm text-[var(--muted-foreground)] mt-2">
+                <p className="text-sm text-muted-foreground mt-2">
                   No Axis Bank account holders in this debt run
                 </p>
               )}
               {neftPayments.length === 0 && (
-                <p className="text-sm text-[var(--muted-foreground)] mt-2">
+                <p className="text-sm text-muted-foreground mt-2">
                   No NEFT payments required - all employees have Axis accounts
                 </p>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Payments Table */}
-        <div className="bg-white border border-[var(--border)]">
-          <div className="px-6 py-4 border-b border-[var(--border)]">
-            <h2 className="text-sm font-semibold text-[var(--foreground)]">
-              Payment Details
-            </h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-[var(--muted)] border-b border-[var(--border)]">
-                  <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Employee
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Reference
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Gross Debt
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    TDS
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Net
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Balance After
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                    Bank
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {debtRun.debtPayments.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center">
-                      <Wallet className="w-12 h-12 mx-auto mb-4 text-[var(--muted-foreground)]" />
-                      <p className="text-[var(--muted-foreground)]">No payments in this run</p>
-                    </td>
-                  </tr>
-                ) : (
-                  debtRun.debtPayments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-[var(--muted)] transition-colors">
-                      <td className="px-4 py-4">
-                        <Link
-                          href={`/lokwasis/${payment.lokwasi.id}`}
-                          className="font-medium text-[var(--foreground)] hover:text-[var(--primary)]"
-                        >
-                          {payment.lokwasi.name}
-                        </Link>
-                        <p className="text-xs text-[var(--muted-foreground)]">
-                          {payment.lokwasi.employeeCode}
-                        </p>
-                      </td>
-                      <td className="px-4 py-4 text-sm font-mono text-[var(--muted-foreground)]">
-                        {payment.customerReference || '-'}
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-[var(--warning)]">
-                        {formatCurrency(payment.amount)}
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-[var(--muted-foreground)]">
-                        {payment.tdsAmount !== null ? (
-                          <>
-                            {formatCurrency(payment.tdsAmount)}
-                            <span className="text-xs block">({payment.tdsRate}%)</span>
-                          </>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-right font-semibold text-[var(--foreground)]">
-                        {payment.netAmount !== null
-                          ? formatCurrency(payment.netAmount)
-                          : '-'}
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-[var(--muted-foreground)]">
-                        {formatCurrency(payment.balanceAfter)}
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        {payment.lokwasi.isAxisBank ? (
-                          <span className="text-xs px-1.5 py-0.5 bg-[var(--info)] text-white">
-                            AXIS
-                          </span>
-                        ) : (
-                          <span className="text-xs text-[var(--muted-foreground)]">
-                            {payment.lokwasi.bankName}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <Card className="rounded-none shadow-none py-0 gap-0 overflow-hidden">
+          <CardHeader className="border-b px-6 py-4">
+            <CardTitle className="text-sm">Payment Details</CardTitle>
+          </CardHeader>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted">
+                <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Employee
+                </TableHead>
+                <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Reference
+                </TableHead>
+                <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Gross Debt
+                </TableHead>
+                <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  TDS
+                </TableHead>
+                <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Net
+                </TableHead>
+                <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Balance After
+                </TableHead>
+                <TableHead className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Bank
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {debtRun.debtPayments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="px-4 py-12 text-center">
+                    <Wallet className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">No payments in this run</p>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                debtRun.debtPayments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell className="px-4 py-4">
+                      <Link
+                        href={`/lokwasis/${payment.lokwasi.id}`}
+                        className="font-medium text-foreground hover:text-primary"
+                      >
+                        {payment.lokwasi.name}
+                      </Link>
+                      <p className="text-xs text-muted-foreground">
+                        {payment.lokwasi.employeeCode}
+                      </p>
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-sm font-mono text-muted-foreground">
+                      {payment.customerReference || '-'}
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-right text-sm text-warning">
+                      {formatCurrency(payment.amount)}
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-right text-sm text-muted-foreground">
+                      {payment.tdsAmount !== null ? (
+                        <>
+                          {formatCurrency(payment.tdsAmount)}
+                          <span className="text-xs block">({payment.tdsRate}%)</span>
+                        </>
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-right font-semibold text-foreground">
+                      {payment.netAmount !== null
+                        ? formatCurrency(payment.netAmount)
+                        : '-'}
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-right text-sm text-muted-foreground">
+                      {formatCurrency(payment.balanceAfter)}
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-center">
+                      {payment.lokwasi.isAxisBank ? (
+                        <Badge variant="info">AXIS</Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {payment.lokwasi.bankName}
+                        </span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Card>
 
         {/* Metadata */}
-        <div className="mt-6 flex flex-wrap items-center gap-6 text-xs text-[var(--muted-foreground)]">
+        <div className="mt-6 flex flex-wrap items-center gap-6 text-xs text-muted-foreground">
           <span>Created: {new Date(debtRun.createdAt).toLocaleString('en-IN')}</span>
           {debtRun.processedAt && (
             <span>Processed: {new Date(debtRun.processedAt).toLocaleString('en-IN')}</span>

@@ -47,7 +47,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(ellipse_at_center,var(--devalok-50)_0%,var(--neutral-50)_70%)] p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}

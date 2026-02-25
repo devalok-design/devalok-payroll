@@ -2,6 +2,17 @@ import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { prisma } from '@/lib/prisma'
 import { formatCurrency } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table'
 import {
   AlertTriangle,
   CheckCircle,
@@ -98,231 +109,233 @@ export default async function DebtsPage() {
           <div className="flex items-center gap-4">
             <Link
               href="/debts/runs"
-              className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              className="text-sm text-muted-foreground hover:text-foreground"
             >
               View all debt runs
               <ArrowRight className="w-3 h-3 inline ml-1" />
             </Link>
           </div>
-          <Link
-            href="/debts/process"
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white font-medium text-sm hover:bg-[var(--devalok-700)] transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Process Debt Payments
-          </Link>
+          <Button asChild>
+            <Link href="/debts/process">
+              <Plus className="w-4 h-4" />
+              Process Debt Payments
+            </Link>
+          </Button>
         </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)]">
-                Total Outstanding
-              </span>
-              <AlertTriangle className="w-4 h-4 text-[var(--warning)]" />
-            </div>
-            <p className="text-2xl font-semibold text-[var(--warning)] mt-2">
-              {formatCurrency(totalOutstanding)}
-            </p>
-            <p className="text-xs text-[var(--muted-foreground)]">
-              From proprietorship transition
-            </p>
-          </div>
+          <Card className="rounded-none py-0 gap-0">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+                  Total Outstanding
+                </span>
+                <AlertTriangle className="w-4 h-4 text-warning" />
+              </div>
+              <p className="text-2xl font-semibold text-warning mt-2">
+                {formatCurrency(totalOutstanding)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                From proprietorship transition
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)]">
-                Total Repaid
-              </span>
-              <TrendingDown className="w-4 h-4 text-[var(--success)]" />
-            </div>
-            <p className="text-2xl font-semibold text-[var(--success)] mt-2">
-              {formatCurrency(data.totalPaid)}
-            </p>
-            <p className="text-xs text-[var(--muted-foreground)]">
-              Via payroll payouts
-            </p>
-          </div>
+          <Card className="rounded-none py-0 gap-0">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+                  Total Repaid
+                </span>
+                <TrendingDown className="w-4 h-4 text-success" />
+              </div>
+              <p className="text-2xl font-semibold text-success mt-2">
+                {formatCurrency(data.totalPaid)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Via payroll payouts
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)]">
-                Lokwasis with Debt
-              </span>
-              <Users className="w-4 h-4 text-[var(--primary)]" />
-            </div>
-            <p className="text-2xl font-semibold text-[var(--foreground)] mt-2">
-              {lokwasisWithDebt.length}
-            </p>
-            <p className="text-xs text-[var(--muted-foreground)]">
-              With outstanding balance
-            </p>
-          </div>
+          <Card className="rounded-none py-0 gap-0">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+                  Lokwasis with Debt
+                </span>
+                <Users className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-2xl font-semibold text-foreground mt-2">
+                {lokwasisWithDebt.length}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                With outstanding balance
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white p-4 border border-[var(--border)]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium tracking-wider uppercase text-[var(--muted-foreground)]">
-                Fully Repaid
-              </span>
-              <CheckCircle className="w-4 h-4 text-[var(--success)]" />
-            </div>
-            <p className="text-2xl font-semibold text-[var(--foreground)] mt-2">
-              {lokwasisFullyPaid.length}
-            </p>
-            <p className="text-xs text-[var(--muted-foreground)]">
-              Debt cleared
-            </p>
-          </div>
+          <Card className="rounded-none py-0 gap-0">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+                  Fully Repaid
+                </span>
+                <CheckCircle className="w-4 h-4 text-success" />
+              </div>
+              <p className="text-2xl font-semibold text-foreground mt-2">
+                {lokwasisFullyPaid.length}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Debt cleared
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Info Box */}
-        <div className="mb-6 p-4 bg-[var(--muted)] border border-[var(--border)]">
-          <div className="flex items-start gap-3">
-            <Wallet className="w-5 h-5 text-[var(--muted-foreground)] mt-0.5" />
-            <div>
-              <h3 className="font-medium text-[var(--foreground)]">
-                About Salary Debts
-              </h3>
-              <p className="text-sm text-[var(--muted-foreground)] mt-1">
-                These are pending salary amounts from when Devalok transitioned from a
-                sole proprietorship to a private limited company. Debt payouts can be
-                processed via standalone debt runs or included in regular payroll runs.
-                TDS is deducted from debt payouts and included in monthly TDS reports.
-              </p>
+        <Card className="rounded-none py-0 gap-0 bg-muted mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Wallet className="w-5 h-5 text-muted-foreground mt-0.5" />
+              <div>
+                <h3 className="font-medium text-foreground">
+                  About Salary Debts
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  These are pending salary amounts from when Devalok transitioned from a
+                  sole proprietorship to a private limited company. Debt payouts can be
+                  processed via standalone debt runs or included in regular payroll runs.
+                  TDS is deducted from debt payouts and included in monthly TDS reports.
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Debt by Employee */}
-          <div className="lg:col-span-2 bg-white border border-[var(--border)]">
-            <div className="px-6 py-4 border-b border-[var(--border)]">
-              <h2 className="text-sm font-semibold text-[var(--foreground)]">
+          <Card className="lg:col-span-2 rounded-none py-0 gap-0 overflow-hidden">
+            <CardHeader className="border-b py-4 px-6">
+              <h2 className="text-sm font-semibold text-foreground">
                 Outstanding Balances
               </h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-[var(--muted)] border-b border-[var(--border)]">
-                    <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                      Employee
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                      Outstanding
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                      Total Repaid
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)]">
-                  {data.lokwasis.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-12 text-center">
-                        <Wallet className="w-12 h-12 mx-auto mb-4 text-[var(--muted-foreground)]" />
-                        <p className="text-[var(--muted-foreground)]">No salary debts recorded</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    data.lokwasis.map((lokwasi) => {
-                      const outstanding = Number(lokwasi.salaryDebtBalance)
-                      const totalRepaid = lokwasi.debtPayments.reduce(
-                        (sum, p) => sum + Number(p.amount),
-                        0
-                      )
-                      const isFullyPaid = outstanding === 0 && lokwasi.debtPayments.length > 0
+            </CardHeader>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted">
+                  <TableHead className="px-4 py-3 text-xs font-semibold tracking-wider uppercase">
+                    Employee
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase">
+                    Outstanding
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase">
+                    Total Repaid
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase">
+                    Status
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.lokwasis.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="px-4 py-12 text-center">
+                      <Wallet className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">No salary debts recorded</p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  data.lokwasis.map((lokwasi) => {
+                    const outstanding = Number(lokwasi.salaryDebtBalance)
+                    const totalRepaid = lokwasi.debtPayments.reduce(
+                      (sum, p) => sum + Number(p.amount),
+                      0
+                    )
+                    const isFullyPaid = outstanding === 0 && lokwasi.debtPayments.length > 0
 
-                      return (
-                        <tr
-                          key={lokwasi.id}
-                          className="hover:bg-[var(--muted)] transition-colors"
-                        >
-                          <td className="px-4 py-4">
-                            <Link
-                              href={`/lokwasis/${lokwasi.id}`}
-                              className="font-medium text-[var(--foreground)] hover:text-[var(--primary)]"
-                            >
-                              {lokwasi.name}
-                            </Link>
-                            <p className="text-xs text-[var(--muted-foreground)]">
-                              {lokwasi.employeeCode}
-                            </p>
-                          </td>
-                          <td className="px-4 py-4 text-right">
-                            {outstanding > 0 ? (
-                              <span className="font-semibold text-[var(--warning)]">
-                                {formatCurrency(outstanding)}
-                              </span>
-                            ) : (
-                              <span className="text-[var(--muted-foreground)]">-</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-4 text-right">
-                            {totalRepaid > 0 ? (
-                              <span className="text-[var(--success)]">
-                                {formatCurrency(totalRepaid)}
-                              </span>
-                            ) : (
-                              <span className="text-[var(--muted-foreground)]">-</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-4 text-center">
-                            {isFullyPaid ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-[var(--success-light)] text-[var(--success)]">
-                                <CheckCircle className="w-3 h-3" />
-                                CLEARED
-                              </span>
-                            ) : outstanding > 0 ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-[var(--warning-light)] text-[var(--warning)]">
-                                PENDING
-                              </span>
-                            ) : (
-                              <span className="text-xs text-[var(--muted-foreground)]">
-                                No debt
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                    return (
+                      <TableRow key={lokwasi.id}>
+                        <TableCell className="px-4 py-4">
+                          <Link
+                            href={`/lokwasis/${lokwasi.id}`}
+                            className="font-medium text-foreground hover:text-primary"
+                          >
+                            {lokwasi.name}
+                          </Link>
+                          <p className="text-xs text-muted-foreground">
+                            {lokwasi.employeeCode}
+                          </p>
+                        </TableCell>
+                        <TableCell className="px-4 py-4 text-right">
+                          {outstanding > 0 ? (
+                            <span className="font-semibold text-warning">
+                              {formatCurrency(outstanding)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="px-4 py-4 text-right">
+                          {totalRepaid > 0 ? (
+                            <span className="text-success">
+                              {formatCurrency(totalRepaid)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="px-4 py-4 text-center">
+                          {isFullyPaid ? (
+                            <Badge variant="success">
+                              <CheckCircle className="w-3 h-3" />
+                              CLEARED
+                            </Badge>
+                          ) : outstanding > 0 ? (
+                            <Badge variant="warning">PENDING</Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              No debt
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </Card>
 
           {/* Recent Payments */}
-          <div className="bg-white border border-[var(--border)]">
-            <div className="px-6 py-4 border-b border-[var(--border)]">
-              <h2 className="text-sm font-semibold text-[var(--foreground)]">
+          <Card className="rounded-none py-0 gap-0">
+            <CardHeader className="border-b py-4 px-6">
+              <h2 className="text-sm font-semibold text-foreground">
                 Recent Debt Payments
               </h2>
-            </div>
+            </CardHeader>
             {data.recentPayments.length === 0 ? (
               <div className="p-6 text-center">
-                <TrendingDown className="w-8 h-8 mx-auto mb-3 text-[var(--muted-foreground)]" />
-                <p className="text-sm text-[var(--muted-foreground)]">
+                <TrendingDown className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
                   No debt payments yet
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-[var(--border)]">
+              <div className="divide-y divide-border">
                 {data.recentPayments.map((payment) => (
                   <div
                     key={payment.id}
-                    className="px-4 py-3 hover:bg-[var(--muted)] transition-colors"
+                    className="px-4 py-3 hover:bg-devalok-50 transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-[var(--foreground)]">
+                        <p className="text-sm font-medium text-foreground">
                           {payment.lokwasi.name}
                         </p>
-                        <p className="text-xs text-[var(--muted-foreground)]">
+                        <p className="text-xs text-muted-foreground">
                           {new Date(payment.paymentDate).toLocaleDateString('en-IN', {
                             day: 'numeric',
                             month: 'short',
@@ -330,7 +343,7 @@ export default async function DebtsPage() {
                           })}
                         </p>
                       </div>
-                      <span className="font-medium text-[var(--success)]">
+                      <span className="font-medium text-success">
                         {formatCurrency(Number(payment.amount))}
                       </span>
                     </div>
@@ -338,7 +351,7 @@ export default async function DebtsPage() {
                 ))}
               </div>
             )}
-          </div>
+          </Card>
         </div>
       </main>
     </>
