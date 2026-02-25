@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireStaff } from '@/lib/rbac'
 import { DebtRunStatus } from '@prisma/client'
 
 // GET /api/debt-runs/[id] - Get a single debt run with payments
@@ -9,9 +10,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireStaff(session)
+  if (rbacError) return rbacError
 
   const { id } = params
 
@@ -81,9 +81,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireStaff(session)
+  if (rbacError) return rbacError
 
   const { id } = params
 

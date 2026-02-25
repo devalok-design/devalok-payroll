@@ -15,12 +15,17 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
-  passwordHash  String    @map("password_hash")
+  passwordHash  String?   @map("password_hash") // nullable for OAuth users
   name          String
   role          UserRole  @default(ADMIN)
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   lastLoginAt   DateTime? @map("last_login_at")
+
+  // OAuth linkage
+  lokwasiId     String?   @unique @map("lokwasi_id")
+  lokwasi       Lokwasi?  @relation("UserLokwasi", fields: [lokwasiId], references: [id])
+  accounts      Account[]
 
   // Relations
   createdLokwasis    Lokwasi[]       @relation("CreatedBy")
@@ -40,6 +45,26 @@ model User {
 enum UserRole {
   ADMIN
   VIEWER
+  LOKWASI
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 // ============================================
@@ -86,7 +111,11 @@ model Lokwasi {
   createdById         String?   @map("created_by_id")
   createdBy           User?     @relation("CreatedBy", fields: [createdById], references: [id])
 
+  // Portal login
+  email               String?   @unique // @devalok.in email for portal login
+
   // Relations
+  user                User?     @relation("UserLokwasi")
   payments            Payment[]
   tdsMonthly          TdsMonthly[]
   leaveTransactions   LeaveTransaction[]

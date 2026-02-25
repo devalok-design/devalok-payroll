@@ -42,8 +42,10 @@ export default function NewLokwasiPage() {
     setErrors({})
 
     const formData = new FormData(e.currentTarget)
+    const emailValue = (formData.get('email') as string)?.trim()
     const data = {
       name: formData.get('name') as string,
+      email: emailValue || null,
       pan: (formData.get('pan') as string).toUpperCase(),
       aadhaar: (formData.get('aadhaar') as string).replace(/\s/g, ''),
       bankAccount: formData.get('bankAccount') as string,
@@ -129,6 +131,24 @@ export default function NewLokwasiPage() {
                   {errors.name && (
                     <p className="mt-1 text-sm text-error">{errors.name}</p>
                   )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label className="text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                    Email (for portal login)
+                  </Label>
+                  <Input
+                    name="email"
+                    type="email"
+                    className="h-12"
+                    placeholder="e.g., name@gmail.com"
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-error">{errors.email}</p>
+                  )}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Used for Google sign-in to the team member portal
+                  </p>
                 </div>
 
                 <div>

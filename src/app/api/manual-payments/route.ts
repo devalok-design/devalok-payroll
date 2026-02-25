@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/rbac'
+import { requireStaff, requireAdmin } from '@/lib/rbac'
 import { calculateTds } from '@/lib/calculations/payroll'
 import { createAccountTransaction, generateManualPaymentReference } from '@/lib/account/transactions'
 
 // GET /api/manual-payments - List manual payments
 export async function GET(request: NextRequest) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireStaff(session)
+  if (rbacError) return rbacError
 
   const { searchParams } = new URL(request.url)
   const lokwasiId = searchParams.get('lokwasiId')

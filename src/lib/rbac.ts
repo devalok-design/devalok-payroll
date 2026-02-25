@@ -5,7 +5,7 @@ import { Session } from 'next-auth'
  * Role-Based Access Control utilities
  */
 
-export type UserRole = 'ADMIN' | 'VIEWER'
+export type UserRole = 'ADMIN' | 'VIEWER' | 'LOKWASI'
 
 export interface RBACError {
   error: string
@@ -37,6 +37,20 @@ export function isViewer(session: Session | null): boolean {
 }
 
 /**
+ * Check if a user has lokwasi (team member) role
+ */
+export function isLokwasi(session: Session | null): boolean {
+  return hasRole(session, 'LOKWASI')
+}
+
+/**
+ * Check if a user is staff (admin or viewer — excludes lokwasi)
+ */
+export function isStaff(session: Session | null): boolean {
+  return isAdmin(session) || isViewer(session)
+}
+
+/**
  * Require authenticated user
  * Returns error response if not authenticated, null otherwise
  */
@@ -55,13 +69,11 @@ export function requireAuth(session: Session | null): NextResponse<RBACError> | 
  * Returns error response if not admin, null otherwise
  */
 export function requireAdmin(session: Session | null): NextResponse<RBACError> | null {
-  // First check authentication
   const authError = requireAuth(session)
   if (authError) {
     return authError
   }
 
-  // Check admin role
   if (!isAdmin(session)) {
     return NextResponse.json<RBACError>(
       {
@@ -76,9 +88,72 @@ export function requireAdmin(session: Session | null): NextResponse<RBACError> |
 }
 
 /**
- * Require either admin or viewer role (any authenticated user)
+ * Require staff role (admin or viewer — excludes lokwasi)
+ * Returns error response if not staff, null otherwise
+ */
+export function requireStaff(session: Session | null): NextResponse<RBACError> | null {
+  const authError = requireAuth(session)
+  if (authError) {
+    return authError
+  }
+
+  if (!isStaff(session)) {
+    return NextResponse.json<RBACError>(
+      {
+        error: 'Forbidden: Staff access required',
+        code: 'FORBIDDEN',
+      },
+      { status: 403 }
+    )
+  }
+
+  return null
+}
+
+/**
+ * Require either admin or viewer role (any authenticated staff user)
  * Returns error response if not authenticated, null otherwise
  */
 export function requireViewer(session: Session | null): NextResponse<RBACError> | null {
-  return requireAuth(session)
+  return requireStaff(session)
+}
+
+/**
+ * Require lokwasi role with a linked lokwasi record
+ * Returns error response if not lokwasi, null otherwise
+ */
+export function requireLokwasi(session: Session | null): NextResponse<RBACError> | null {
+  const authError = requireAuth(session)
+  if (authError) {
+    return authError
+  }
+
+  if (!isLokwasi(session)) {
+    return NextResponse.json<RBACError>(
+      {
+        error: 'Forbidden: Portal access required',
+        code: 'FORBIDDEN',
+      },
+      { status: 403 }
+    )
+  }
+
+  if (!session!.user.lokwasiId) {
+    return NextResponse.json<RBACError>(
+      {
+        error: 'Forbidden: No linked team member account',
+        code: 'FORBIDDEN',
+      },
+      { status: 403 }
+    )
+  }
+
+  return null
+}
+
+/**
+ * Extract lokwasiId from session (for portal data scoping)
+ */
+export function getLokwasiId(session: Session): string | null {
+  return session.user.lokwasiId || null
 }

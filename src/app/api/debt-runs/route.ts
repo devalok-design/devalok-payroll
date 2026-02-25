@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateDebtReference, calculateTds } from '@/lib/calculations/payroll'
-import { requireViewer, requireAdmin } from '@/lib/rbac'
+import { requireStaff, requireAdmin } from '@/lib/rbac'
 
 // GET /api/debt-runs - List all debt runs
 export async function GET() {
   const session = await auth()
-  const rbacError = requireViewer(session)
+  const rbacError = requireStaff(session)
   if (rbacError) return rbacError
 
   try {

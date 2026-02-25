@@ -12,6 +12,11 @@ const nextConfig = {
         hostname: 'raw.githubusercontent.com',
         pathname: '/devalok-design/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
     ],
   },
 };

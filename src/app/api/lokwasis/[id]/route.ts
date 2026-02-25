@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireStaff, requireAdmin } from '@/lib/rbac'
 import { lokwasiUpdateSchema } from '@/lib/validators/lokwasi'
 import { z } from 'zod'
 
@@ -10,9 +11,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireStaff(session)
+  if (rbacError) return rbacError
 
   const { id } = params
 
@@ -129,9 +129,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const staffError = requireStaff(session)
+  if (staffError) return staffError
 
   const { id } = params
 
@@ -153,6 +152,7 @@ export async function PUT(
       where: { id },
       data: {
         name: validatedData.name,
+        email: validatedData.email !== undefined ? (validatedData.email || null) : undefined,
         pan: validatedData.pan,
         aadhaar: validatedData.aadhaar,
         bankAccount: validatedData.bankAccount,
@@ -224,9 +224,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const staffError = requireStaff(session)
+  if (staffError) return staffError
 
   const { id } = params
 

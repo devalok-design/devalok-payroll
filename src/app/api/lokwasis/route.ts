@@ -3,12 +3,12 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { lokwasiSchema } from '@/lib/validators/lokwasi'
 import { z } from 'zod'
-import { requireViewer, requireAdmin } from '@/lib/rbac'
+import { requireStaff, requireAdmin } from '@/lib/rbac'
 
 // GET /api/lokwasis - List all lokwasis
 export async function GET() {
   const session = await auth()
-  const rbacError = requireViewer(session)
+  const rbacError = requireStaff(session)
   if (rbacError) return rbacError
 
   try {
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       data: {
         employeeCode: nextCode,
         name: validatedData.name,
+        email: validatedData.email || null,
         pan: validatedData.pan,
         aadhaar: validatedData.aadhaar,
         bankAccount: validatedData.bankAccount,

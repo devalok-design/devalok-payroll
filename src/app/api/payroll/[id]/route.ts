@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { PayrollStatus } from '@prisma/client'
-import { requireViewer, requireAdmin } from '@/lib/rbac'
+import { requireStaff, requireAdmin } from '@/lib/rbac'
 import { createAccountTransaction } from '@/lib/account/transactions'
 
 // GET /api/payroll/[id] - Get a single payroll run with payments
@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const session = await auth()
-  const rbacError = requireViewer(session)
+  const rbacError = requireStaff(session)
   if (rbacError) return rbacError
 
   const { id } = params

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireStaff } from '@/lib/rbac'
 import { generateCustomerReference } from '@/lib/calculations/payroll'
 
 /**
@@ -13,9 +14,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireStaff(session)
+  if (rbacError) return rbacError
 
   const { id } = params
 

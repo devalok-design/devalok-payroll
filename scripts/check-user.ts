@@ -16,6 +16,11 @@ async function main() {
     console.log('Password hash exists:', !!user.passwordHash)
 
     // Test password
+    if (!user.passwordHash) {
+      console.log('No password hash (OAuth user)')
+      await prisma.$disconnect()
+      return
+    }
     const isValid = await compare('admin123', user.passwordHash)
     console.log('Password "admin123" valid:', isValid)
   }

@@ -35,6 +35,10 @@ async function main() {
   console.log(`  Name: ${user.name}`)
   console.log(`  Email: ${user.email}`)
   console.log(`  Last login: ${user.lastLoginAt || 'Never'}`)
+  if (!user.passwordHash) {
+    console.log(`  No password hash (OAuth user)`)
+    process.exit(0)
+  }
   console.log(`  Hash length: ${user.passwordHash.length}`)
   console.log(`  Hash preview: ${user.passwordHash.substring(0, 30)}...`)
 

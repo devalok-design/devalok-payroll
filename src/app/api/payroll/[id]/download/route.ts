@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireStaff } from '@/lib/rbac'
 import { generateAxisExcel, formatAxisDate } from '@/lib/excel/axis-template'
 import { generateNEFTExcel, formatNEFTDate } from '@/lib/excel/neft-template'
 import { getDebitAccount } from '@/lib/settings'
@@ -11,9 +12,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const session = await auth()
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const rbacError = requireStaff(session)
+  if (rbacError) return rbacError
 
   const { id } = params
   const searchParams = request.nextUrl.searchParams

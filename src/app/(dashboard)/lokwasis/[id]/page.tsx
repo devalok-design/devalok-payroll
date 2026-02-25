@@ -25,6 +25,7 @@ import {
   Landmark,
   Gift,
   HelpCircle,
+  Mail,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +46,7 @@ interface Lokwasi {
   id: string
   employeeCode: string
   name: string
+  email: string | null
   pan: string
   aadhaar: string
   bankAccount: string
@@ -212,8 +214,10 @@ export default function LokwasiDetailPage({
     setErrors({})
 
     const formData = new FormData(e.currentTarget)
+    const emailValue = (formData.get('email') as string)?.trim()
     const data = {
       name: formData.get('name') as string,
+      email: emailValue || null,
       pan: (formData.get('pan') as string).toUpperCase(),
       aadhaar: (formData.get('aadhaar') as string).replace(/\s/g, ''),
       bankAccount: formData.get('bankAccount') as string,
@@ -443,6 +447,24 @@ export default function LokwasiDetailPage({
                     required
                     className="h-12"
                   />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
+                    Email (for portal login)
+                  </label>
+                  <Input
+                    name="email"
+                    type="email"
+                    defaultValue={lokwasi.email || ''}
+                    className="h-12"
+                    placeholder="e.g., name@gmail.com"
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-error">{errors.email}</p>
+                  )}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Used for Google sign-in to the team member portal
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
@@ -805,6 +827,19 @@ export default function LokwasiDetailPage({
                         year: 'numeric',
                       })}
                     </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
+                      Portal Email
+                    </p>
+                    {lokwasi.email ? (
+                      <p className="text-foreground flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                        {lokwasi.email}
+                      </p>
+                    ) : (
+                      <p className="text-muted-foreground text-sm italic">Not set</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
